@@ -1,0 +1,47 @@
+name: Build Chrome Extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/extension/**'
+      - 'packages/**'
+      - '.github/workflows/build-extension.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @123pass/extension build
+
+      - name: Package extension
+        run: |
+          cd apps/extension
+          zip -r ../../123pass-extension-${{ github.sha }}.zip dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 123pass-extension
+          path: 123pass-extension-*.zip
+          retention-days: 30
+
+      # Production releases push to Chrome Web Store via PlasmoHQ/bpp action.
+      # Uncomment after CHROME_WEBSTORE_KEYS secret is set.
+      # - name: Publish to Chrome Web Store
+      #   if: startsWith(github.ref, 'refs/tags/v')
+      #   uses: PlasmoHQ/bpp@v3
+      #   with:
+      #     keys: ${{ secrets.CHROME_WEBSTORE_KEYS }}
+      #     artifact: 123pass-extension-${{ github.sha }}.zip

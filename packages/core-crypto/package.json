@@ -1,0 +1,33 @@
+{
+  "name": "@123pass/core-crypto",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --max-warnings=0",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "bench": "vitest bench",
+    "clean": "rm -rf dist .turbo coverage"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^0.5.1",
+    "@noble/curves": "^1.4.0",
+    "@noble/hashes": "^1.8.0",
+    "@scure/base": "^1.1.6",
+    "@scure/bip39": "^1.2.2"
+  },
+  "devDependencies": {
+    "@123pass/shared": "workspace:*"
+  }
+}

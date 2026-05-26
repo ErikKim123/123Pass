@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "123Pass",
+    "slug": "123pass",
+    "scheme": "passpass",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.123pass.mobile",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Unlock your vault with Face ID"
+      }
+    },
+    "android": {
+      "package": "app.app123pass.mobile",
+      "permissions": ["USE_BIOMETRIC", "USE_FINGERPRINT"]
+    },
+    "plugins": [
+      "expo-router",
+      ["expo-secure-store", { "faceIDPermission": "Unlock your vault with Face ID" }],
+      ["expo-local-authentication", { "faceIDPermission": "Unlock your vault with Face ID" }]
+    ],
+    "experiments": {
+      "tsconfigPaths": true,
+      "typedRoutes": false
+    }
+  }
+}

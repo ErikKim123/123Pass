@@ -1,0 +1,52 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+}
+
+body {
+  width: 360px;
+  margin: 0;
+  padding: 12px;
+}
+
+button {
+  cursor: pointer;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+label > input {
+  padding: 6px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  border-bottom: 1px solid #eee;
+  padding: 6px 0;
+}
+
+li button {
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  padding: 4px;
+}
+
+li button:hover {
+  background: #f4f4f5;
+}

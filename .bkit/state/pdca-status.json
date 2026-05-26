@@ -1,0 +1,47 @@
+{
+  "currentFeature": "123Pass-app",
+  "phase": "report-interim",
+  "scope": ["module-1", "module-2", "module-3", "module-4", "module-5", "module-6", "module-7", "module-8", "module-9", "module-10", "module-11"],
+  "matchRate": 94.70,
+  "analysisDoc": "docs/03-analysis/123Pass-app.analysis.md",
+  "reportDoc": "docs/04-report/123Pass-app.report.md",
+  "startedAt": "2026-05-26T00:00:00Z",
+  "lastUpdated": "2026-05-26T15:48:00Z",
+  "features": {
+    "123Pass-app": {
+      "phase": "do",
+      "plan": "docs/01-plan/features/123Pass-app.plan.md",
+      "design": "docs/02-design/features/123Pass-app.design.md",
+      "modules": {
+        "module-1": "verified",
+        "module-2": "verified",
+        "module-3": "completed-static",
+        "module-4": "verified-mock",
+        "module-5": "verified",
+        "module-6": "verified-build",
+        "module-7": "verified-build",
+        "module-8": "verified-typecheck",
+        "module-9": "verified-typecheck",
+        "module-10": "verified-build",
+        "module-11": "verified-build"
+      },
+      "mvpComplete": true,
+      "verification": {
+        "typecheck": "pass",
+        "lint": "pass",
+        "tests": "57 passed",
+        "coverage": {
+          "statements": 98.27,
+          "branches": 87.05,
+          "functions": 96.87,
+          "lines": 98.27
+        },
+        "katVectors": {
+          "rfc5869-hkdf": "3/3 passed",
+          "rfc6238-totp": "5/5 passed"
+        },
+        "verifiedAt": "2026-05-26T15:48:00Z"
+      }
+    }
+  }
+}

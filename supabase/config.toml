@@ -1,0 +1,37 @@
+# supabase/config.toml — local development settings.
+# Run `supabase start` (after `supabase init`) to spin up a local Supabase stack with these settings.
+
+project_id = "123pass-app"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false   # MVP: skip email confirmation. Enable for production.
+double_confirm_changes = true
+secure_password_change = true
+
+[realtime]
+enabled = true

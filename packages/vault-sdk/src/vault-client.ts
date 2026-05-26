@@ -1,0 +1,174 @@
+// Design Ref: §11.1 — VaultClient: the single entry point apps interact with.
+// Holds the in-memory unlocked session and routes calls to UseCases.
+
+import { memzero } from '@123pass/core-crypto';
+import type { VaultItemPayload, VaultItemType, WrappedKey } from '@123pass/shared';
+
+import { VaultError } from './domain/errors';
+import {
+  createItem,
+  deleteItem,
+  listItems,
+  readItem,
+  searchHashForQuery,
+  searchItems,
+  updateItem,
+  type DecryptedItem,
+} from './usecases/item-crud';
+import {
+  rotateMasterPassword,
+  type RotateArgs,
+  type RotateResult,
+} from './usecases/rotate-master-password';
+import { shareItem, unwrapSharedVaultKey, type ShareItemArgs } from './usecases/share-item';
+import { signUpAndUnlock, type SignUpArgs } from './usecases/signup-and-unlock';
+import { subscribeSync, type SyncEvent } from './usecases/sync';
+import {
+  unlockWithKdfParams,
+  type KnownKdfUnlockArgs,
+  type UnlockedSession,
+} from './usecases/unlock-vault';
+
+import type { VaultRepository } from './domain/repository';
+
+export class VaultClient {
+  private session: UnlockedSession | null = null;
+  private autoLockTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(
+    public readonly repo: VaultRepository,
+    private readonly options: { autoLockMs?: number } = {},
+  ) {}
+
+  // ---- State ----
+  isUnlocked(): boolean {
+    return this.session !== null;
+  }
+
+  currentSession(): UnlockedSession {
+    if (!this.session) throw new VaultError('VAULT_LOCKED', 'Vault is locked. Unlock first.');
+    return this.session;
+  }
+
+  // ---- Lifecycle ----
+  async signUp(args: Omit<SignUpArgs, 'repo'>): Promise<UnlockedSession> {
+    if (this.session) {
+      throw new VaultError('VAULT_ALREADY_UNLOCKED', 'Cannot sign up while unlocked.');
+    }
+    this.session = await signUpAndUnlock({ ...args, repo: this.repo });
+    this.armAutoLock();
+    return this.session;
+  }
+
+  async unlock(args: Omit<KnownKdfUnlockArgs, 'repo'>): Promise<UnlockedSession> {
+    if (this.session) {
+      throw new VaultError('VAULT_ALREADY_UNLOCKED', 'Vault already unlocked. Lock first.');
+    }
+    this.session = await unlockWithKdfParams({ ...args, repo: this.repo });
+    this.armAutoLock();
+    return this.session;
+  }
+
+  /**
+   * Wipe key material from memory. Idempotent.
+   * Design Ref: §7.1 V6.2.5.
+   */
+  lock(): void {
+    if (this.session) {
+      memzero(this.session.vaultKey);
+      memzero(this.session.privateKey);
+      this.session = null;
+    }
+    if (this.autoLockTimer) {
+      clearTimeout(this.autoLockTimer);
+      this.autoLockTimer = null;
+    }
+  }
+
+  // ---- Activity tracking → auto-lock ----
+  touch(): void {
+    if (this.session) this.armAutoLock();
+  }
+
+  private armAutoLock(): void {
+    if (!this.options.autoLockMs) return;
+    if (this.autoLockTimer) clearTimeout(this.autoLockTimer);
+    this.autoLockTimer = setTimeout(() => this.lock(), this.options.autoLockMs);
+  }
+
+  // ---- CRUD ----
+  create(
+    payload: VaultItemPayload,
+    itemType: VaultItemType,
+    options?: { folderId?: string | null; favorite?: boolean },
+  ): Promise<DecryptedItem> {
+    return createItem(this.repo, this.currentSession(), payload, itemType, options);
+  }
+
+  read(itemId: string): Promise<DecryptedItem> {
+    return readItem(this.repo, this.currentSession(), itemId);
+  }
+
+  list(): Promise<DecryptedItem[]> {
+    return listItems(this.repo, this.currentSession());
+  }
+
+  update(
+    itemId: string,
+    payload: VaultItemPayload,
+    expectedVersion: number,
+    options?: { folderId?: string | null; favorite?: boolean },
+  ): Promise<DecryptedItem> {
+    return updateItem(this.repo, this.currentSession(), itemId, payload, expectedVersion, options);
+  }
+
+  delete(itemId: string): Promise<void> {
+    this.currentSession();
+    return deleteItem(this.repo, itemId);
+  }
+
+  // ---- Search ----
+  search(items: DecryptedItem[], query: string): DecryptedItem[] {
+    return searchItems(this.currentSession(), items, query);
+  }
+
+  searchHashFor(query: string): string {
+    return searchHashForQuery(this.currentSession(), query);
+  }
+
+  // ---- Share ----
+  share(args: Omit<ShareItemArgs, 'repo' | 'session'>): Promise<void> {
+    return shareItem({ ...args, repo: this.repo, session: this.currentSession() });
+  }
+
+  unwrapSharedKey(wrappedKey: WrappedKey): Uint8Array {
+    return unwrapSharedVaultKey({ session: this.currentSession(), wrappedKey });
+  }
+
+  // ---- Rotate ----
+  async rotate(args: Omit<RotateArgs, 'repo' | 'session'>): Promise<RotateResult> {
+    const result = await rotateMasterPassword({
+      ...args,
+      repo: this.repo,
+      session: this.currentSession(),
+    });
+    // Replace the in-memory session vaultKey atomically.
+    if (this.session) {
+      memzero(this.session.vaultKey);
+      this.session = result.newSession;
+    }
+    return result;
+  }
+
+  // ---- Sync ----
+  subscribe(onEvent: (event: SyncEvent) => void): () => void {
+    return subscribeSync(this.repo, this.currentSession(), onEvent);
+  }
+}
+
+export function createVaultClient(
+  repo: VaultRepository,
+  options?: { autoLockMs?: number },
+): VaultClient {
+  return new VaultClient(repo, options);
+}

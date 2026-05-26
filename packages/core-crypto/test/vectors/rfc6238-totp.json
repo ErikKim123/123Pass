@@ -1,0 +1,47 @@
+[
+  {
+    "name": "RFC 6238 Appendix B — T=59, SHA-1, 8 digits",
+    "secret": "12345678901234567890",
+    "secretBase32": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+    "algorithm": "SHA1",
+    "digits": 8,
+    "time": 59,
+    "expected": "94287082"
+  },
+  {
+    "name": "RFC 6238 Appendix B — T=1111111109, SHA-1, 8 digits",
+    "secret": "12345678901234567890",
+    "secretBase32": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+    "algorithm": "SHA1",
+    "digits": 8,
+    "time": 1111111109,
+    "expected": "07081804"
+  },
+  {
+    "name": "RFC 6238 Appendix B — T=1111111111, SHA-1, 8 digits",
+    "secret": "12345678901234567890",
+    "secretBase32": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+    "algorithm": "SHA1",
+    "digits": 8,
+    "time": 1111111111,
+    "expected": "14050471"
+  },
+  {
+    "name": "RFC 6238 Appendix B — T=1234567890, SHA-1, 8 digits",
+    "secret": "12345678901234567890",
+    "secretBase32": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+    "algorithm": "SHA1",
+    "digits": 8,
+    "time": 1234567890,
+    "expected": "89005924"
+  },
+  {
+    "name": "RFC 6238 Appendix B — T=2000000000, SHA-1, 8 digits",
+    "secret": "12345678901234567890",
+    "secretBase32": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+    "algorithm": "SHA1",
+    "digits": 8,
+    "time": 2000000000,
+    "expected": "69279037"
+  }
+]

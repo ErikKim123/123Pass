@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "123Pass",
+  "version": "0.1.0",
+  "description": "Zero-Knowledge E2EE password manager — autofill and vault access",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "123Pass"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content/autofill.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
