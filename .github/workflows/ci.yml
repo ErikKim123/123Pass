@@ -36,6 +36,14 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # DB5 — verify migrations and detect type drift before merge.
+      # Both run against PGlite (PostgreSQL 16 WASM); no Docker / Supabase CLI needed.
+      - name: DB schema verification (PGlite)
+        run: pnpm db:verify
+
+      - name: DB type drift detection
+        run: pnpm db:check-types
+
       - name: Audit
         run: pnpm audit --audit-level=high
         continue-on-error: false

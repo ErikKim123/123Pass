@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### DB5 — CI 마이그레이션 자동 적용 + 타입 drift gate (2026-05-27)
+- **`.github/workflows/ci.yml` 갱신**: 모든 push/PR마다 두 가지 신규 검증 단계 추가.
+  - `pnpm db:verify` — PGlite로 8개 마이그레이션 적용 + 9개 RLS behaviour assertion 실행 (Docker 불필요)
+  - `pnpm db:check-types` — `database.types.generated.ts`와 마이그레이션 사이의 drift 감지, drift 시 PR 차단
+- **신규 워크플로 `.github/workflows/db-migrate.yml`**: `main` 브랜치 push 중 `supabase/migrations/**` 또는 워크플로 자체 변경 시 트리거. 절차:
+  1. Required secrets(`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`) 존재 확인
+  2. 없으면 `::notice::`만 출력하고 정상 종료 (현재 Supabase 프로젝트 미연동 상태에서 CI green 유지)
+  3. 있으면 `supabase/setup-cli@v1` 설치 → `supabase link` → `supabase db diff` (로그 캡처) → `supabase db push`
+  4. 마지막에 `supabase gen types typescript`로 공식 타입 생성하여 로그에 출력 (장기적으로 PGlite-based generator와 비교 가능)
+- `workflow_dispatch` 트리거 추가 — secrets 설정 후 수동 재실행 가능.
+- Live Supabase 프로젝트 연결 시 마이그레이션 → 프로덕션 적용이 무인화됨. 그 전까지는 검증(`db:verify` + `db:check-types`)만 자동, 배포는 수동.
+
 ### DB4 — Supabase Auth 세션 통합 (2026-05-27)
 - **VaultRepository 인터페이스 확장**: `currentSession()`, `onAuthStateChange(handler)` 추가 (`AuthEventType`, `AuthSession`, `AuthStateChange`, `AuthUnsubscribe` 타입).
 - **SupabaseRepository** 구현: `supabase.auth.onAuthStateChange`를 4개 정규화된 이벤트(`SIGNED_IN`, `SIGNED_OUT`, `TOKEN_REFRESHED`, `INITIAL_SESSION`)로 매핑. `USER_DELETED`는 `SIGNED_OUT`으로 통합.
