@@ -61,6 +61,30 @@ export interface RealtimeChange {
 export type RealtimeUnsubscribe = () => void;
 
 /**
+ * Auth state events surfaced from the underlying session layer (Supabase Auth,
+ * or the mock for tests). Subscribers can react to session restoration on page
+ * reload, token refresh, or out-of-band sign-out (e.g. token revoked server
+ * side, another tab signed out).
+ */
+export type AuthEventType =
+  | 'SIGNED_IN'
+  | 'SIGNED_OUT'
+  | 'TOKEN_REFRESHED'
+  | 'INITIAL_SESSION';
+
+export interface AuthSession {
+  userId: string;
+  email: string | null;
+}
+
+export interface AuthStateChange {
+  event: AuthEventType;
+  session: AuthSession | null;
+}
+
+export type AuthUnsubscribe = () => void;
+
+/**
  * The only port through which vault-sdk talks to the outside world.
  * All adapters (Supabase, Mock) implement this interface.
  *
@@ -73,6 +97,10 @@ export interface VaultRepository {
   signIn(email: string, authHash: string): Promise<{ userId: string }>;
   signOut(): Promise<void>;
   currentUserId(): Promise<string | null>;
+  /** Current session (null when signed-out). Returns email when available so the UI can pre-fill it. */
+  currentSession(): Promise<AuthSession | null>;
+  /** Subscribe to session lifecycle events. Returns an unsubscribe function. */
+  onAuthStateChange(handler: (change: AuthStateChange) => void): AuthUnsubscribe;
 
   // ---- User profile ----
   createUserRecord(record: UserRecord): Promise<void>;

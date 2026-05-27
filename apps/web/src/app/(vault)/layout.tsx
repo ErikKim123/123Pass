@@ -13,7 +13,17 @@ export default function VaultLayout({
   children: React.ReactNode;
 }): JSX.Element {
   const lock = useVaultStore((s) => s.lock);
+  const client = useVaultStore((s) => s.client);
   const router = useRouter();
+
+  const signOut = async (): Promise<void> => {
+    if (client) {
+      await client.signOutFully();
+    } else {
+      lock();
+    }
+    router.replace('/login');
+  };
 
   return (
     <AuthGuard>
@@ -45,6 +55,9 @@ export default function VaultLayout({
           }}
         >
           Lock
+        </button>
+        <button type="button" onClick={() => void signOut()}>
+          Sign out
         </button>
       </header>
       <div style={{ padding: 16 }}>{children}</div>

@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+### DB4 — Supabase Auth 세션 통합 (2026-05-27)
+- **VaultRepository 인터페이스 확장**: `currentSession()`, `onAuthStateChange(handler)` 추가 (`AuthEventType`, `AuthSession`, `AuthStateChange`, `AuthUnsubscribe` 타입).
+- **SupabaseRepository** 구현: `supabase.auth.onAuthStateChange`를 4개 정규화된 이벤트(`SIGNED_IN`, `SIGNED_OUT`, `TOKEN_REFRESHED`, `INITIAL_SESSION`)로 매핑. `USER_DELETED`는 `SIGNED_OUT`으로 통합.
+- **5개 어댑터 모두 동일 contract 구현**: SupabaseRepository, InMemoryRepository, MockBrowserRepository (web), SecureStoreRepository (mobile), TauriStoreRepository (desktop), ChromeStorageRepository (extension).
+- **`VaultClient.signOutFully()`**: 새 메서드. `lock()`으로 in-memory vaultKey/privateKey 즉시 wipe + `repo.signOut()`으로 Supabase JWT 폐기. 기존 `lock()`은 "잠깐 잠그기" 용도로 유지.
+- **VaultProvider** 갱신: repo의 `onAuthStateChange`를 구독해서 (a) 세션 변경 시 마지막 email을 `localStorage`에 저장 (b) out-of-band `SIGNED_OUT` 이벤트(token 만료/다른 탭 로그아웃/서버 측 revoke) 발생 시 in-memory vault 즉시 lock.
+- **`apps/web/src/lib/last-email.ts`** 신규 헬퍼: localStorage에 마지막 email 저장/조회/삭제.
+- **`LockScreen`에 `initialEmail` prop 추가**: 페이지 로드 시 마지막 사용 email 자동 pre-fill (마스터 PW만 입력하면 unlock).
+- **`/recover` 페이지** 신규: `RecoveryFlow mode="restore"`로 24-word BIP39 시드 검증. 실제 마스터 PW reset은 후속 작업으로 명시 (현재는 시드 형식 검증만).
+- **(vault) layout에 "Sign out" 버튼 추가**: 기존 "Lock"과 분리. Lock = 메모리 키만 wipe (Supabase 세션 유지), Sign out = 완전 종료 (JWT 폐기).
+- **신규 6 테스트** (`auth-lifecycle.test.ts`): INITIAL_SESSION 이벤트, SIGNED_IN/SIGNED_OUT 전이, currentSession null 처리, unsubscribe 동작, signOutFully의 lock+repo.signOut 합성, idempotency.
+- 워크스페이스 테스트 143 → 149 (+6 auth), typecheck 12/12, lint 8/8, 0 regression.
+
 ### DB3 — PGlite 기반 Database 타입 자동 생성 (2026-05-27)
 - 신규 스크립트 `scripts/gen-types/gen-types.mjs` 추가 (`pnpm db:gen-types`).
 - PGlite로 8개 마이그레이션을 적용한 후 `information_schema` + `pg_proc`를 introspect하여 supabase 공식 `gen types typescript` 출력과 동일한 스타일의 `Database` 타입 생성.

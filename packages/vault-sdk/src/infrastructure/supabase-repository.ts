@@ -25,6 +25,10 @@ import type {
 } from './database.types';
 import type { TypedSupabaseClient } from './supabase-client';
 import type {
+  AuthEventType,
+  AuthSession,
+  AuthStateChange,
+  AuthUnsubscribe,
   EncryptedItemInsert,
   EncryptedItemUpdate,
   RealtimeChange,
@@ -35,6 +39,22 @@ import type {
   WrappedKey,
 } from '../domain/repository';
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
+
+function mapAuthEvent(supabaseEvent: string): AuthEventType | null {
+  switch (supabaseEvent) {
+    case 'SIGNED_IN':
+      return 'SIGNED_IN';
+    case 'SIGNED_OUT':
+    case 'USER_DELETED':
+      return 'SIGNED_OUT';
+    case 'TOKEN_REFRESHED':
+      return 'TOKEN_REFRESHED';
+    case 'INITIAL_SESSION':
+      return 'INITIAL_SESSION';
+    default:
+      return null;
+  }
+}
 
 function fromUserRow(row: UsersRow): UserRecord {
   return {
@@ -105,6 +125,27 @@ export class SupabaseRepository implements VaultRepository {
   async currentUserId(): Promise<string | null> {
     const { data } = await this.sb.auth.getUser();
     return data.user?.id ?? null;
+  }
+
+  async currentSession(): Promise<AuthSession | null> {
+    const { data } = await this.sb.auth.getUser();
+    if (!data.user) return null;
+    return { userId: data.user.id, email: data.user.email ?? null };
+  }
+
+  onAuthStateChange(handler: (change: AuthStateChange) => void): AuthUnsubscribe {
+    const { data } = this.sb.auth.onAuthStateChange((event, session) => {
+      // Supabase emits more events than we care about; collapse them into our 4.
+      const mapped = mapAuthEvent(event);
+      if (!mapped) return;
+      const authSession: AuthSession | null = session?.user
+        ? { userId: session.user.id, email: session.user.email ?? null }
+        : null;
+      handler({ event: mapped, session: authSession });
+    });
+    return () => {
+      data.subscription.unsubscribe();
+    };
   }
 
   // ---- User profile ----

@@ -18,6 +18,10 @@ export type * from './infrastructure/database.types';
 
 export { VaultError, type VaultErrorCode } from './domain/errors';
 export type {
+  AuthEventType,
+  AuthSession,
+  AuthStateChange,
+  AuthUnsubscribe,
   EncryptedItemInsert,
   EncryptedItemUpdate,
   RealtimeChange,

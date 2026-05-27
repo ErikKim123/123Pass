@@ -3,6 +3,9 @@
 //   - the only insert/update shape accepted is ciphertext + iv + authTag.
 
 import type {
+  AuthSession,
+  AuthStateChange,
+  AuthUnsubscribe,
   EncryptedItemInsert,
   EncryptedItemUpdate,
   RealtimeChange,
@@ -42,6 +45,7 @@ export class InMemoryRepository implements VaultRepository {
   private groupItems: GroupItemsRow[] = [];
   private currentUid: string | null = null;
   private subscribers: Array<(c: RealtimeChange) => void> = [];
+  private authSubscribers: Array<(c: AuthStateChange) => void> = [];
 
   /** Tracks every insert/update payload for plaintext-leak inspection. */
   public capturedInsertPayloads: EncryptedItemInsert[] = [];
@@ -56,6 +60,7 @@ export class InMemoryRepository implements VaultRepository {
     const id = uuid();
     this.authUsers.push({ id, email, authHash });
     this.currentUid = id;
+    this.emitAuth('SIGNED_IN');
     return { userId: id };
   }
 
@@ -63,15 +68,50 @@ export class InMemoryRepository implements VaultRepository {
     const u = this.authUsers.find((x) => x.email === email && x.authHash === authHash);
     if (!u) throw new Error('invalid credentials');
     this.currentUid = u.id;
+    this.emitAuth('SIGNED_IN');
     return { userId: u.id };
   }
 
   async signOut(): Promise<void> {
     this.currentUid = null;
+    this.emitAuth('SIGNED_OUT');
   }
 
   async currentUserId(): Promise<string | null> {
     return this.currentUid;
+  }
+
+  async currentSession(): Promise<AuthSession | null> {
+    if (!this.currentUid) return null;
+    const u = this.authUsers.find((x) => x.id === this.currentUid);
+    return { userId: this.currentUid, email: u?.email ?? null };
+  }
+
+  onAuthStateChange(handler: (change: AuthStateChange) => void): AuthUnsubscribe {
+    this.authSubscribers.push(handler);
+    // Emit an INITIAL_SESSION event synchronously to match SupabaseRepository behaviour.
+    queueMicrotask(() => {
+      const session = this.currentUid
+        ? {
+            userId: this.currentUid,
+            email: this.authUsers.find((x) => x.id === this.currentUid)?.email ?? null,
+          }
+        : null;
+      handler({ event: 'INITIAL_SESSION', session });
+    });
+    return () => {
+      this.authSubscribers = this.authSubscribers.filter((s) => s !== handler);
+    };
+  }
+
+  private emitAuth(event: 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED'): void {
+    const session = this.currentUid
+      ? {
+          userId: this.currentUid,
+          email: this.authUsers.find((x) => x.id === this.currentUid)?.email ?? null,
+        }
+      : null;
+    for (const s of this.authSubscribers) s({ event, session });
   }
 
   // ---- User record ----

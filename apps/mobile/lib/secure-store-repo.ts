@@ -5,6 +5,9 @@
 import * as SecureStore from 'expo-secure-store';
 
 import type {
+  AuthSession,
+  AuthStateChange,
+  AuthUnsubscribe,
   EncryptedItemInsert,
   EncryptedItemUpdate,
   EncryptedVaultItemRow,
@@ -71,6 +74,7 @@ async function setUid(uid: string | null): Promise<void> {
 
 export class SecureStoreRepository implements VaultRepository {
   private subscribers: Array<(c: RealtimeChange) => void> = [];
+  private authSubscribers: Array<(c: AuthStateChange) => void> = [];
 
   async signUp(email: string, authHash: string): Promise<{ userId: string }> {
     const state = await loadState();
@@ -79,6 +83,7 @@ export class SecureStoreRepository implements VaultRepository {
     state.authUsers.push({ id, email, authHash });
     await saveState(state);
     await setUid(id);
+    void this.emitAuth('SIGNED_IN');
     return { userId: id };
   }
 
@@ -87,15 +92,38 @@ export class SecureStoreRepository implements VaultRepository {
     const u = state.authUsers.find((x) => x.email === email && x.authHash === authHash);
     if (!u) throw new Error('invalid credentials');
     await setUid(u.id);
+    void this.emitAuth('SIGNED_IN');
     return { userId: u.id };
   }
 
   async signOut(): Promise<void> {
     await setUid(null);
+    void this.emitAuth('SIGNED_OUT');
   }
 
   async currentUserId(): Promise<string | null> {
     return getUid();
+  }
+
+  async currentSession(): Promise<AuthSession | null> {
+    const uid = await getUid();
+    if (!uid) return null;
+    const state = await loadState();
+    const u = state.authUsers.find((x) => x.id === uid);
+    return { userId: uid, email: u?.email ?? null };
+  }
+
+  onAuthStateChange(handler: (change: AuthStateChange) => void): AuthUnsubscribe {
+    this.authSubscribers.push(handler);
+    void this.currentSession().then((session) => handler({ event: 'INITIAL_SESSION', session }));
+    return () => {
+      this.authSubscribers = this.authSubscribers.filter((s) => s !== handler);
+    };
+  }
+
+  private async emitAuth(event: 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED'): Promise<void> {
+    const session = await this.currentSession();
+    for (const s of this.authSubscribers) s({ event, session });
   }
 
   async createUserRecord(record: UserRecord): Promise<void> {

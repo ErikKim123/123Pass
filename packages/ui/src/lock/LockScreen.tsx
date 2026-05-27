@@ -14,18 +14,24 @@ export interface LockScreenProps {
   lookupKdfParams: (email: string) => Promise<KdfParams>;
   onUnlocked?: () => void;
   className?: string;
+  /**
+   * Pre-fill the email field — used when a Supabase Auth session is still alive
+   * but the vault key has been wiped (lock-without-signOut, page reload).
+   */
+  initialEmail?: string;
 }
 
 export function LockScreen({
   lookupKdfParams,
   onUnlocked,
   className,
+  initialEmail,
 }: LockScreenProps): JSX.Element {
   const unlock = useVaultStore((s) => s.unlock);
   const loading = useVaultStore((s) => s.loading);
   const storeError = useVaultStore((s) => s.error);
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail ?? '');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
 

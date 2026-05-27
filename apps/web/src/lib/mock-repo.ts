@@ -7,6 +7,9 @@ import type {
   EncryptedItemInsert,
   EncryptedItemUpdate,
   EncryptedVaultItemRow,
+  AuthSession,
+  AuthStateChange,
+  AuthUnsubscribe,
   GroupItemsRow,
   GroupMembersRow,
   GroupsRow,
@@ -85,6 +88,7 @@ function setCurrentUid(uid: string | null): void {
 
 export class MockBrowserRepository implements VaultRepository {
   private subscribers: Array<(c: RealtimeChange) => void> = [];
+  private authSubscribers: Array<(c: AuthStateChange) => void> = [];
 
   async signUp(email: string, authHash: string): Promise<{ userId: string }> {
     const state = load();
@@ -93,6 +97,7 @@ export class MockBrowserRepository implements VaultRepository {
     state.authUsers.push({ id, email, authHash });
     persist(state);
     setCurrentUid(id);
+    this.emitAuth('SIGNED_IN');
     return { userId: id };
   }
 
@@ -101,15 +106,41 @@ export class MockBrowserRepository implements VaultRepository {
     const u = state.authUsers.find((x) => x.email === email && x.authHash === authHash);
     if (!u) throw new Error('invalid credentials');
     setCurrentUid(u.id);
+    this.emitAuth('SIGNED_IN');
     return { userId: u.id };
   }
 
   async signOut(): Promise<void> {
     setCurrentUid(null);
+    this.emitAuth('SIGNED_OUT');
   }
 
   async currentUserId(): Promise<string | null> {
     return getCurrentUid();
+  }
+
+  async currentSession(): Promise<AuthSession | null> {
+    const uid = getCurrentUid();
+    if (!uid) return null;
+    const state = load();
+    const u = state.authUsers.find((x) => x.id === uid);
+    return { userId: uid, email: u?.email ?? null };
+  }
+
+  onAuthStateChange(handler: (change: AuthStateChange) => void): AuthUnsubscribe {
+    this.authSubscribers.push(handler);
+    queueMicrotask(() => {
+      void this.currentSession().then((session) => handler({ event: 'INITIAL_SESSION', session }));
+    });
+    return () => {
+      this.authSubscribers = this.authSubscribers.filter((s) => s !== handler);
+    };
+  }
+
+  private emitAuth(event: 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED'): void {
+    void this.currentSession().then((session) => {
+      for (const s of this.authSubscribers) s({ event, session });
+    });
   }
 
   async createUserRecord(record: UserRecord): Promise<void> {

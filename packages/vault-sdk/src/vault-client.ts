@@ -81,7 +81,8 @@ export class VaultClient {
   }
 
   /**
-   * Wipe key material from memory. Idempotent.
+   * Wipe key material from memory. Idempotent. Leaves the Supabase auth session
+   * alone — call signOutFully() to also revoke server-side credentials.
    * Design Ref: §7.1 V6.2.5.
    */
   lock(): void {
@@ -94,6 +95,16 @@ export class VaultClient {
       clearTimeout(this.autoLockTimer);
       this.autoLockTimer = null;
     }
+  }
+
+  /**
+   * Lock the vault AND end the Supabase Auth session (revokes JWT, removes the
+   * persisted session from local storage). Use this for "Sign out" UX. Use
+   * lock() alone for "Lock for now, I'll be back".
+   */
+  async signOutFully(): Promise<void> {
+    this.lock();
+    await this.repo.signOut();
   }
 
   // ---- Activity tracking → auto-lock ----
