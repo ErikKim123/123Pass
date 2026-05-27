@@ -15,6 +15,8 @@
     "test:coverage": "turbo run test:coverage",
     "typecheck": "turbo run typecheck",
     "db:verify": "node scripts/db-verify/verify.mjs",
+    "db:gen-types": "node scripts/gen-types/gen-types.mjs",
+    "db:check-types": "node scripts/gen-types/gen-types.mjs --check",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

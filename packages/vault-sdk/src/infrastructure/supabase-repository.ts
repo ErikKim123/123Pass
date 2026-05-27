@@ -57,14 +57,16 @@ function rethrow(opName: string, error: { message?: string; code?: string } | nu
   });
 }
 
-// Untyped client view used for table/RPC operations. The Database type machinery in
-// @supabase/postgrest-js@2.106 imposes strict Record<string, unknown> constraints on
-// every Row/Insert/Update that our handwritten Database type cannot satisfy without
-// adding index signatures (which would erase per-column type safety). We keep
-// TypedSupabaseClient for auth/channel ergonomics and downcast for from() / rpc().
-// This adapter is the single chokepoint where untyped queries are issued — every
-// payload is still constructed from typed UserRecord / EncryptedItemInsert / etc.,
-// so callers retain their compile-time safety.
+// Untyped client view for from() / rpc(). With DB3 (auto-generated Database in
+// database.types.generated.ts), supabase-client.ts now satisfies the SDK's
+// GenericSchema constraint — but the generated wire-format types are wider than
+// the hand-written domain Row aliases used by repository.ts and use-cases
+// (e.g. `item_type: string` vs `ItemType`, `kdf_params: Json` vs structured
+// KdfParams). Rather than narrow every read with ~20 explicit `as XxxRow`
+// casts, we cast the client once here. All payloads are still constructed from
+// typed inputs (UserRecord, EncryptedItemInsert, ...) so call sites remain
+// type-safe; this cast only suppresses the row-shape narrowing inside the
+// adapter, which is the trust boundary.
 type AnySupabaseClient = SupabaseClient;
 
 export class SupabaseRepository implements VaultRepository {

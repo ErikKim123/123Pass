@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### DB3 — PGlite 기반 Database 타입 자동 생성 (2026-05-27)
+- 신규 스크립트 `scripts/gen-types/gen-types.mjs` 추가 (`pnpm db:gen-types`).
+- PGlite로 8개 마이그레이션을 적용한 후 `information_schema` + `pg_proc`를 introspect하여 supabase 공식 `gen types typescript` 출력과 동일한 스타일의 `Database` 타입 생성.
+- 출력 위치: `packages/vault-sdk/src/infrastructure/database.types.generated.ts` (auto-generated, 305 lines).
+- 생성된 타입 구조:
+  - 상위 `Json` 재귀 타입
+  - `Tables.<name>.{Row, Insert, Update, Relationships}` — Insert는 DB default/nullable 컬럼이 optional, Update는 모두 optional
+  - `Views.<name>.Row` + `Relationships: []`
+  - `Functions.<name>.Args/Returns`
+  - `Enums` / `CompositeTypes` stub
+- `supabase-client.ts`가 이제 generated Database 타입을 import → SDK의 `GenericSchema` 제약 만족 → 강제 `as any` 캐스팅 없이 동작.
+- Drift 감지: `pnpm db:check-types`로 generated 출력과 commit된 파일을 비교, drift 시 exit code 1 (CI에 추가 권장).
+- Hand-written `database.types.ts`는 domain-friendly types(literal unions `ItemType` / `role` / `permission`, 구조화된 `KdfParams`)로 유지. SupabaseRepository는 `this.db` 캐스트로 generated wire-format ↔ domain narrowing 경계를 어댑터에 봉인.
+- 향후 작업: 진짜 Supabase 프로젝트가 연결되면 `supabase gen types typescript`로 교체, hand-written domain types와 wire-format types의 통합 가능.
+
 ### DB1 — SupabaseRepository 어댑터 구현 (2026-05-27, ADAPTER-01 해소)
 - 신규 파일 `packages/vault-sdk/src/infrastructure/supabase-repository.ts` 추가 — `VaultRepository` 인터페이스의 프로덕션 어댑터 구현체.
 - 28개 메서드 모두 구현: 인증(signUp/signIn/signOut/currentUserId), 사용자 프로필, vault item CRUD(낙관적 동시성 포함), 공유, 그룹/멤버/그룹 item, master password rotation(RPC), Realtime 구독.

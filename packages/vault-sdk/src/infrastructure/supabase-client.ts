@@ -3,7 +3,12 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import type { Database } from './database.types';
+// IMPORTANT: the SDK-facing Database type comes from the AUTO-GENERATED file
+// (which mirrors `supabase gen types typescript` output). The hand-written
+// `database.types.ts` keeps domain-friendly aliases (literal unions, structured
+// JSONB shapes) that downstream code prefers — but that shape does NOT satisfy
+// @supabase/postgrest-js's GenericSchema constraint in strict mode.
+import type { Database } from './database.types.generated';
 
 export interface SupabaseClientOptions {
   url: string;
