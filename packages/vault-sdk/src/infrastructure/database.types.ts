@@ -94,49 +94,67 @@ export interface AuditEventsRow {
   created_at: string;
 }
 
+// Empty Relationships array satisfies @supabase/postgrest-js's GenericTable shape
+// without claiming any FK relationships. Switch to real entries once we adopt
+// `supabase gen types typescript`.
+type NoRelationships = [];
+
 export interface Database {
   public: {
     Tables: {
-      users: { Row: UsersRow; Insert: Omit<UsersRow, 'created_at'>; Update: Partial<UsersRow> };
+      users: {
+        Row: UsersRow;
+        Insert: Omit<UsersRow, 'created_at'>;
+        Update: Partial<UsersRow>;
+        Relationships: NoRelationships;
+      };
       folders: {
         Row: FoldersRow;
         Insert: Omit<FoldersRow, 'id' | 'created_at'>;
         Update: Partial<FoldersRow>;
+        Relationships: NoRelationships;
       };
       encrypted_vault_items: {
         Row: EncryptedVaultItemRow;
         Insert: Omit<EncryptedVaultItemRow, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<EncryptedVaultItemRow>;
+        Relationships: NoRelationships;
       };
       shared_items: {
         Row: SharedItemsRow;
         Insert: Omit<SharedItemsRow, 'id' | 'created_at' | 'accepted_at'>;
         Update: Partial<SharedItemsRow>;
+        Relationships: NoRelationships;
       };
       groups: {
         Row: GroupsRow;
         Insert: Omit<GroupsRow, 'id' | 'created_at'>;
         Update: Partial<GroupsRow>;
+        Relationships: NoRelationships;
       };
       group_members: {
         Row: GroupMembersRow;
         Insert: Omit<GroupMembersRow, 'joined_at'>;
         Update: Partial<GroupMembersRow>;
+        Relationships: NoRelationships;
       };
       group_items: {
         Row: GroupItemsRow;
         Insert: Omit<GroupItemsRow, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<GroupItemsRow>;
+        Relationships: NoRelationships;
       };
       audit_events: {
         Row: AuditEventsRow;
         Insert: Omit<AuditEventsRow, 'id' | 'created_at'>;
         Update: Partial<AuditEventsRow>;
+        Relationships: NoRelationships;
       };
     };
     Views: {
       user_directory: {
         Row: { id: string; email: string; public_key: string };
+        Relationships: NoRelationships;
       };
     };
     Functions: {

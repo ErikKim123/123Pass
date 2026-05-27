@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+### DB1 — SupabaseRepository 어댑터 구현 (2026-05-27, ADAPTER-01 해소)
+- 신규 파일 `packages/vault-sdk/src/infrastructure/supabase-repository.ts` 추가 — `VaultRepository` 인터페이스의 프로덕션 어댑터 구현체.
+- 28개 메서드 모두 구현: 인증(signUp/signIn/signOut/currentUserId), 사용자 프로필, vault item CRUD(낙관적 동시성 포함), 공유, 그룹/멤버/그룹 item, master password rotation(RPC), Realtime 구독.
+- 영지식 경계 유지: 모든 메서드가 `{ ciphertext, iv, authTag }` 형태만 받음. 평문 자격증명 통과 경로 없음. RLS가 2차 방어선.
+- `apps/web/src/lib/supabase.ts` 갱신: env가 설정되면 mock 대신 실제 `SupabaseRepository` 반환. mock fallback은 env 누락 시에만.
+- TypeScript 타입 시스템 워크어라운드: `@supabase/postgrest-js@2.106`의 `GenericSchema` 제약(`Record<string, unknown>`)이 우리의 hand-written `Database` 타입의 specific Row 필드와 호환되지 않음 (index signature 없는 타입은 strict mode에서 Record로 추론 안 됨). 해결: `this.sb`는 typed `TypedSupabaseClient`로 유지하고, `from()/rpc()` 호출에 한해 untyped `SupabaseClient`로 내부 캐스트(`this.db` getter). 모든 payload는 여전히 typed `UserRecord`/`EncryptedItemInsert` 등에서 만들어지므로 호출 site 안전성은 유지됨.
+- `database.types.ts`에 각 Table에 `Relationships: []` 필드 추가 (`@supabase/postgrest-js@2.106` 요구사항).
+- 신규 4개 smoke 테스트(`test/supabase-repository.test.ts`): 인스턴스화 + 인터페이스 conformance + signUp 호출 forwarding + signIn 실패 시 `AUTH_INVALID_CREDENTIALS` 매핑 + rotateMasterPassword RPC 호출.
+- 워크스페이스 테스트 139 → 143 (+4), typecheck 12/12, lint 8/8, 0 regression.
+- 향후 작업: `supabase gen types typescript`로 자동 생성된 `Database` 타입으로 교체 → 더 이상 캐스팅 불필요.
+
 ### DB2 — PGlite 기반 마이그레이션 자동 검증 (2026-05-27, RUNTIME-01 부분 해소)
 - 신규 스크립트 `scripts/db-verify/verify.mjs` 추가 (`pnpm db:verify`).
 - Docker/Supabase CLI 없이 8개 마이그레이션(0001~0008)을 실제 PostgreSQL 16 (PGlite WASM)에 적용하여 검증.

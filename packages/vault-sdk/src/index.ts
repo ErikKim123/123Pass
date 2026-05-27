@@ -9,6 +9,11 @@ export {
   type TypedSupabaseClient,
 } from './infrastructure/supabase-client';
 
+export {
+  SupabaseRepository,
+  createSupabaseRepository,
+} from './infrastructure/supabase-repository';
+
 export type * from './infrastructure/database.types';
 
 export { VaultError, type VaultErrorCode } from './domain/errors';
