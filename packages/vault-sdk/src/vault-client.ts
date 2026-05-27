@@ -227,14 +227,22 @@ export class VaultClient {
    * Bulk-import already-parsed items into the live vault. Each item passes
    * through the standard createItem path so encryption boundaries are preserved
    * and the plaintext-leak guardrail still runs.
+   *
+   * Returns counts plus a failures array so UIs can show which rows failed
+   * and why. Failure messages do NOT include the item payload — only its
+   * `name` (already user-chosen, non-secret) and the error code/message.
    */
   async importItems(
     items: ExportableItem[],
     options?: { folderId?: string | null },
-  ): Promise<{ imported: number; failed: number }> {
+  ): Promise<{
+    imported: number;
+    failed: number;
+    failures: Array<{ name: string; reason: string }>;
+  }> {
     const session = this.currentSession();
     let imported = 0;
-    let failed = 0;
+    const failures: Array<{ name: string; reason: string }> = [];
     for (const item of items) {
       try {
         await createItem(this.repo, session, item.payload, item.itemType, {
@@ -242,11 +250,14 @@ export class VaultClient {
           favorite: item.favorite,
         });
         imported++;
-      } catch {
-        failed++;
+      } catch (err) {
+        failures.push({
+          name: item.payload.name,
+          reason: (err as Error).message,
+        });
       }
     }
-    return { imported, failed };
+    return { imported, failed: failures.length, failures };
   }
 }
 

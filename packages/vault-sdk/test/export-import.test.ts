@@ -112,6 +112,131 @@ describe('FR-15 — encrypted export round-trip', () => {
     const tampered = { ...file, exportedAt: '2099-01-01T00:00:00.000Z' };
     expect(() => decryptFromExport(tampered, 'super-strong-export-pw-001')).toThrow();
   });
+
+  it('rejects future format versions at the schema boundary', () => {
+    // zod literal(1) rejects anything else — guards against silently accepting
+    // a v2 file that uses a different KDF or AEAD.
+    const v2File = {
+      format: '123Pass-export',
+      version: 2,
+      kdf: {
+        algo: 'argon2id-v1',
+        memoryCost: 8192,
+        timeCost: 1,
+        parallelism: 1,
+        salt: 'aGVsbG8gd29ybGQ=',
+      },
+      aead: { algo: 'aes-256-gcm-v1', iv: 'AAAAAAAAAAAAAAAA', authTag: 'AAAAAAAAAAAAAAAAAAAAAAAA' },
+      ciphertext: 'AAAA',
+      exportedAt: '2026-05-27T00:00:00.000Z',
+    };
+    expect(() => decryptFromExport(v2File, 'any-password-12chars')).toThrow();
+  });
+
+  it('rejects unknown format identifiers', () => {
+    const wrongFormat = {
+      format: 'NotAValidFormat',
+      version: 1,
+      kdf: {
+        algo: 'argon2id-v1',
+        memoryCost: 8192,
+        timeCost: 1,
+        parallelism: 1,
+        salt: 'aGVsbG8gd29ybGQ=',
+      },
+      aead: { algo: 'aes-256-gcm-v1', iv: 'AAAAAAAAAAAAAAAA', authTag: 'AAAAAAAAAAAAAAAAAAAAAAAA' },
+      ciphertext: 'AAAA',
+      exportedAt: '2026-05-27T00:00:00.000Z',
+    };
+    expect(() => decryptFromExport(wrongFormat, 'any-password-12chars')).toThrow();
+  });
+
+  // Backward-compat KAT vector — a real previously-encrypted file blob.
+  // If any future change to deriveSingleKey, AAD construction, or AES-GCM
+  // breaks decryption of this blob, this test fails. Frozen at format v1.
+  it('KAT — decrypts a frozen v1 export blob', () => {
+    const KAT_FILE = {
+      format: '123Pass-export',
+      version: 1,
+      kdf: {
+        algo: 'argon2id-v1',
+        memoryCost: 8192,
+        timeCost: 1,
+        parallelism: 1,
+        salt: 'qZofMivOdtyP7WA7QrzAfA==',
+      },
+      aead: {
+        algo: 'aes-256-gcm-v1',
+        iv: 'OEFy/ljhQET4PwK+',
+        authTag: 'jCA3euLGXneA1xCn1w1ICg==',
+      },
+      ciphertext:
+        'LUp03ilRushA2CghUYZrXaec2bc5DRuUnNn1M+h/dcZjB66R2Drvq1alTBfvZsAKsHrDLSGWZyE16K7U6ypxQNfjHZDi4GsoDZtqfzCxdau/fwngRNfe+Yfey9XbVvMj0LZQlKIWdv1yCOVAtetAJDXLbRBbAv5hP/tVeGp6yhK3CfAxSab34n/h0eYqYIoMu88gL55hUMt3Esskkog1SEEpZO30AzKKsIeAzY8ZB6dwdzWEFmR10oBSt3RS/cwgX8nOtcnE7q+ZX6wLACH1I/VK/N3dFbuQ8V/JrAzkqI9M4pS8+69KbRwQOaD7Hb7zaRi9',
+      exportedAt: '2026-05-27T00:00:00.000Z',
+    };
+    const restored = decryptFromExport(KAT_FILE, 'kat-export-password-001');
+    expect(restored).toHaveLength(2);
+    expect(restored[0]!.itemType).toBe('login');
+    expect(restored[0]!.payload.name).toBe('KAT Login');
+    expect(restored[0]!.payload.password).toBe('kat-password-12345');
+    expect(restored[0]!.payload.url).toBe('https://kat.example');
+    expect(restored[0]!.payload.username).toBe('kat-user');
+    expect(restored[1]!.itemType).toBe('note');
+    expect(restored[1]!.favorite).toBe(true);
+    expect(restored[1]!.payload.notes).toBe('kat-notes-body');
+  });
+});
+
+describe('FR-15 — importItems partial-failure reporting', () => {
+  it('reports failed item names and reasons without exposing payload', async () => {
+    const repo = new InMemoryRepository();
+    const client = createVaultClient(repo);
+    await client.signUp({
+      email: 'a@test',
+      masterPassword: 'master-pw-12345',
+      kdfOverrides: fastKdf,
+    });
+
+    // First item is valid; second item has an invalid TOTP secret that zod
+    // would reject inside createItem — confirms failure isolation.
+    const goodItem: ExportableItem = {
+      itemType: 'login',
+      favorite: false,
+      payload: { name: 'Good', password: 'pass-001' },
+    };
+    const badItem = {
+      itemType: 'login' as const,
+      favorite: false,
+      payload: {
+        name: 'Bad TOTP',
+        // not base32 — vaultItemPayloadSchema.parse inside createItem rejects.
+        totpSecret: 'this-is-not-base32-!!!',
+      } as VaultItemPayload,
+    };
+
+    const result = await client.importItems([goodItem, badItem]);
+    expect(result.imported).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.failures).toHaveLength(1);
+    expect(result.failures[0]!.name).toBe('Bad TOTP');
+    expect(result.failures[0]!.reason).toBeTruthy();
+    // Reason must not leak the bad payload's other fields.
+    expect(JSON.stringify(result.failures)).not.toContain('this-is-not-base32');
+  });
+
+  it('returns empty failures array when all items succeed', async () => {
+    const repo = new InMemoryRepository();
+    const client = createVaultClient(repo);
+    await client.signUp({
+      email: 'b@test',
+      masterPassword: 'master-pw-12345',
+      kdfOverrides: fastKdf,
+    });
+    const result = await client.importItems([item1, item2]);
+    expect(result.imported).toBe(2);
+    expect(result.failed).toBe(0);
+    expect(result.failures).toEqual([]);
+  });
 });
 
 describe('FR-15 — VaultClient.exportVault round-trip with live vault', () => {

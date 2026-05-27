@@ -7,6 +7,25 @@ import { EXPORT_FORMAT_ID } from '@123pass/shared';
 import { useVaultStore } from '@123pass/ui';
 import type { ExportableItem } from '@123pass/vault-sdk';
 
+interface ImportSummary {
+  imported: number;
+  failed: number;
+  failures: Array<{ name: string; reason: string }>;
+}
+
+function formatImportSummary(result: ImportSummary, source: string): string {
+  const head = `Imported ${result.imported} item(s) from ${source} (${result.failed} failed).`;
+  if (result.failures.length === 0) return head;
+  const previewCount = Math.min(result.failures.length, 5);
+  const names = result.failures
+    .slice(0, previewCount)
+    .map((f) => f.name)
+    .join(', ');
+  const rest =
+    result.failures.length > previewCount ? ` and ${result.failures.length - previewCount} more` : '';
+  return `${head} Failed: ${names}${rest}.`;
+}
+
 export default function SettingsPage(): JSX.Element {
   const client = useVaultStore((s) => s.client);
   const session = client?.currentSession?.();
@@ -96,9 +115,7 @@ export default function SettingsPage(): JSX.Element {
     setImporting(true);
     try {
       const result = await client.importItems(items);
-      setImportInfo(
-        `Imported ${result.imported} item(s) from ${sourceName} (${result.failed} failed).`,
-      );
+      setImportInfo(formatImportSummary(result, sourceName));
     } catch (err) {
       setImportError((err as Error).message);
     } finally {
@@ -117,9 +134,7 @@ export default function SettingsPage(): JSX.Element {
     try {
       const items = client.decryptExport(pendingEncryptedFile, importPw);
       const result = await client.importItems(items);
-      setImportInfo(
-        `Imported ${result.imported} item(s) from encrypted export (${result.failed} failed).`,
-      );
+      setImportInfo(formatImportSummary(result, 'encrypted export'));
       setPendingEncryptedFile(null);
       setImportPw('');
     } catch (err) {

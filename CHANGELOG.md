@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### FR-15 백로그 갭 해결 (2026-05-27)
+- **갭 #3 (KAT 벡터)**: `export-import.test.ts`에 frozen v1 export blob KAT 추가. 향후 `deriveSingleKey` / AAD 구성 / AES-GCM 모드 변경 시 backward-compat 회귀를 즉시 catch.
+- **갭 #5 (version 거부)**: zod `literal(1)`이 `version: 2` 및 알 수 없는 `format` 값을 schema boundary에서 명시적으로 거부함을 검증하는 테스트 2개 추가.
+- **갭 #4 (importItems 부분 실패 보고)**: `VaultClient.importItems`가 이제 `failures: Array<{ name, reason }>`를 반환. UI는 실패한 항목 이름과 사유를 표시 (최대 5개 미리보기 + "and N more"). 실패 사유에는 페이로드 비밀이 포함되지 않음.
+- vault-sdk 테스트 +5 (40→45), 워크스페이스 누적 134→139.
+
 ### 추가 (FR-15 — Vault Export / Import)
 - **`@123pass/core-crypto`**: `deriveSingleKey()` — Argon2id로 password+salt에서 단일 32바이트 키 도출. 마스터 패스워드와 도메인 분리된 export 패스워드 전용.
 - **`@123pass/shared`**: `export.zod.ts` — 3개 포맷 zod 스키마 (123Pass-encrypted JSON v1, Bitwarden unencrypted JSON, 1Password 8 CSV).
