@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+### FR-15 — E2E Playwright 시나리오 추가 (2026-05-27)
+- 신규 spec `tests/e2e/fr15-export-import.spec.ts` 추가 (6개 시나리오):
+  1. **암호화 export 라운드트립** — 사용자 A 가입 → 항목 생성 → export → 사용자 B(별도 context) 가입 → import → 동일 항목 복호화 확인. 다운로드된 파일에 평문 비밀 비포함 검증.
+  2. **잘못된 export 패스워드 거부** — 정확한 비밀번호로 export 후 틀린 비밀번호로 import 시도 → `import-error` 표시 확인.
+  3. **Bitwarden JSON import** — login + secureNote 타입 2개 import 후 vault에 등장 확인.
+  4. **1Password CSV import** — 따옴표 이스케이프 + 콤마 포함 notes + otpauth:// secret 파싱 검증.
+  5. **알 수 없는 포맷 거부** — 임의 CSV → `import-error`에 "recognize|format" 메시지.
+  6. **Export password 12자 미만 비활성화** — 빈/짧은/12자+ 입력별 버튼 disabled/enabled 상태 검증.
+- 기존 3개 spec(`auth-flow`, `vault-crud`, `group-flow`)과 동일 패턴. Playwright runner 자체 설치는 별도 작업으로 남아있음(MVP 리포트 §3.3 "작성됨" 상태 유지).
+
 ### BUNDLE-01 마무리 — Tree-shaking 활성화 (2026-05-27)
 - **`"sideEffects": false`**를 4개 내부 패키지(`@123pass/core-crypto`, `@123pass/shared`, `@123pass/vault-sdk`, `@123pass/ui`) `package.json`에 추가.
 - 근본 원인: 누락된 sideEffects 플래그로 webpack/Next.js가 barrel re-export(`export * from`)를 통한 모든 모듈을 강제 포함시켰음. 이제 사용되지 않은 export(예: BIP39 wordlist, HIBP SHA-1, TOTP, recovery)가 페이지별로 정확히 tree-shaken됨.
