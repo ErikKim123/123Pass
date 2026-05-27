@@ -6,6 +6,17 @@ import type { VaultItemPayload, VaultItemType, WrappedKey } from '@123pass/share
 
 import { VaultError } from './domain/errors';
 import {
+  decryptFromExport,
+  encryptForExport,
+  type EncryptExportArgs,
+  type ExportableItem,
+} from './usecases/export-vault';
+import {
+  detectImportFormat,
+  parse1PasswordCsv,
+  parseBitwardenJson,
+} from './usecases/import-vault';
+import {
   createItem,
   deleteItem,
   listItems,
@@ -163,6 +174,79 @@ export class VaultClient {
   // ---- Sync ----
   subscribe(onEvent: (event: SyncEvent) => void): () => void {
     return subscribeSync(this.repo, this.currentSession(), onEvent);
+  }
+
+  // ---- FR-15: Export / Import ----
+  /**
+   * Re-encrypt the entire vault under a user-chosen export password and return
+   * a portable file payload. The master password is never reused — domain
+   * separation per Design §7.3.
+   */
+  async exportVault(
+    exportPassword: string,
+    options?: { kdfOverrides?: EncryptExportArgs['kdfOverrides'] },
+  ): Promise<ReturnType<typeof encryptForExport>> {
+    const items = await this.list();
+    const exportable: ExportableItem[] = items.map((it) => ({
+      itemType: it.itemType,
+      favorite: it.favorite,
+      payload: it.payload,
+    }));
+    return encryptForExport({
+      items: exportable,
+      exportPassword,
+      kdfOverrides: options?.kdfOverrides,
+    });
+  }
+
+  /**
+   * Decrypt a 123Pass-encrypted export file using its export password.
+   * Does NOT touch the live vault — caller decides what to do with the items.
+   */
+  decryptExport(file: unknown, exportPassword: string): ExportableItem[] {
+    return decryptFromExport(file, exportPassword);
+  }
+
+  /**
+   * Parse an external import file (Bitwarden JSON or 1Password CSV) into
+   * ExportableItem records. For 123Pass-encrypted files, callers should use
+   * decryptExport instead (since it needs a password).
+   */
+  parseImport(content: string): ExportableItem[] {
+    const format = detectImportFormat(content);
+    if (format === 'bitwarden-json') return parseBitwardenJson(content);
+    if (format === '1password-csv') return parse1PasswordCsv(content);
+    // 123Pass-encrypted requires a password — caller must use decryptExport.
+    throw new VaultError(
+      'IMPORT_FORMAT_UNKNOWN',
+      'Use decryptExport(file, password) for 123Pass-encrypted files.',
+    );
+  }
+
+  /**
+   * Bulk-import already-parsed items into the live vault. Each item passes
+   * through the standard createItem path so encryption boundaries are preserved
+   * and the plaintext-leak guardrail still runs.
+   */
+  async importItems(
+    items: ExportableItem[],
+    options?: { folderId?: string | null },
+  ): Promise<{ imported: number; failed: number }> {
+    const session = this.currentSession();
+    let imported = 0;
+    let failed = 0;
+    for (const item of items) {
+      try {
+        await createItem(this.repo, session, item.payload, item.itemType, {
+          folderId: options?.folderId ?? null,
+          favorite: item.favorite,
+        });
+        imported++;
+      } catch {
+        failed++;
+      }
+    }
+    return { imported, failed };
   }
 }
 

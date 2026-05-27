@@ -11,7 +11,11 @@ export type VaultErrorCode =
   | 'PLAINTEXT_LEAK_GUARD'
   | 'RECOVERY_INVALID'
   | 'REPOSITORY_ERROR'
-  | 'NETWORK_OFFLINE';
+  | 'NETWORK_OFFLINE'
+  | 'EXPORT_PASSWORD_TOO_SHORT'
+  | 'EXPORT_DECRYPT_FAILED'
+  | 'IMPORT_FORMAT_UNKNOWN'
+  | 'IMPORT_PARSE_FAILED';
 
 export class VaultError extends Error {
   public readonly code: VaultErrorCode;

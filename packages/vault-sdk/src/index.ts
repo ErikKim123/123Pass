@@ -51,4 +51,17 @@ export {
   type PwnedHit,
 } from './usecases/hibp';
 
-export const VAULT_SDK_VERSION = '0.1.0-module-11';
+// FR-15 — export / import
+export {
+  encryptForExport,
+  decryptFromExport,
+  type ExportableItem,
+  type EncryptExportArgs,
+} from './usecases/export-vault';
+export {
+  detectImportFormat,
+  parseBitwardenJson,
+  parse1PasswordCsv,
+} from './usecases/import-vault';
+
+export const VAULT_SDK_VERSION = '0.2.0-fr15';

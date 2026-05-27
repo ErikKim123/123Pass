@@ -1,14 +1,14 @@
 {
-  "currentFeature": "123Pass-app",
-  "phase": "completed",
-  "scope": ["module-1", "module-2", "module-3", "module-4", "module-5", "module-6", "module-7", "module-8", "module-9", "module-10", "module-11"],
+  "currentFeature": "FR-15-export-import",
+  "phase": "do",
+  "scope": ["module-1", "module-2", "module-3", "module-4", "module-5", "module-6", "module-7", "module-8", "module-9", "module-10", "module-11", "fr-15"],
   "matchRate": 96.10,
   "gitTag": "v0.1.0",
   "remoteUrl": "https://github.com/ErikKim123/123Pass",
   "analysisDoc": "docs/03-analysis/123Pass-app.analysis.md",
   "reportDoc": "docs/04-report/123Pass-app.report.md",
   "startedAt": "2026-05-26T00:00:00Z",
-  "lastUpdated": "2026-05-26T15:48:00Z",
+  "lastUpdated": "2026-05-27T00:00:00Z",
   "features": {
     "123Pass-app": {
       "phase": "do",
@@ -44,6 +44,42 @@
         },
         "verifiedAt": "2026-05-26T15:48:00Z"
       }
+    },
+    "FR-15-export-import": {
+      "phase": "do",
+      "description": "Vault export/import — encrypted JSON round-trip + Bitwarden JSON + 1Password CSV",
+      "newFiles": [
+        "packages/shared/src/schemas/export.zod.ts",
+        "packages/vault-sdk/src/usecases/export-vault.ts",
+        "packages/vault-sdk/src/usecases/import-vault.ts",
+        "packages/vault-sdk/test/export-import.test.ts"
+      ],
+      "modifiedFiles": [
+        "packages/shared/src/index.ts",
+        "packages/core-crypto/src/kdf.ts (deriveSingleKey)",
+        "packages/vault-sdk/src/index.ts",
+        "packages/vault-sdk/src/vault-client.ts (4 new methods)",
+        "packages/vault-sdk/src/domain/errors.ts (4 new codes)",
+        "apps/web/src/app/(vault)/settings/page.tsx (Export/Import sections)",
+        "CHANGELOG.md"
+      ],
+      "verification": {
+        "typecheck": "12/12 pass",
+        "lint": "8/8 pass",
+        "tests": "134 passed (was 117, +17 FR-15)",
+        "build": {
+          "web-next-build": "11 pages, /settings 211KB First Load JS",
+          "extension-vite-build": "not re-run"
+        },
+        "verifiedAt": "2026-05-27T00:00:00Z"
+      },
+      "zeroKnowledgeProperties": [
+        "export file never contains plaintext credentials (verified by no-plaintext test)",
+        "export password ≥ 12 chars enforced",
+        "AAD binds format|version|exportedAt to ciphertext (metadata tamper rejected)",
+        "imported items pass through createItem → assertNoPlaintextLeak guard",
+        "domain separation: master password salt ≠ export password salt"
+      ]
     }
   }
 }

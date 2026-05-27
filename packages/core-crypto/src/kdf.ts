@@ -45,6 +45,50 @@ function coerceSalt(salt: Uint8Array | string, name: string): Uint8Array {
   return salt;
 }
 
+export interface DeriveSingleKeyParams {
+  password: string;
+  salt: Uint8Array | string;
+  memoryCost?: number;
+  timeCost?: number;
+  parallelism?: number;
+}
+
+/**
+ * Derive a single 256-bit key from password + salt. Used by FR-15 export — the
+ * export password is independent of the master password (domain separation by
+ * having a separate salt for the export file).
+ */
+export function deriveSingleKey(params: DeriveSingleKeyParams): Uint8Array {
+  const {
+    password,
+    salt,
+    memoryCost = ARGON2_MEMORY_COST,
+    timeCost = ARGON2_TIME_COST,
+    parallelism = ARGON2_PARALLELISM,
+  } = params;
+
+  if (typeof password !== 'string' || password.length === 0) {
+    throw new CryptoError(ERR_INVALID_INPUT, 'password must be a non-empty string');
+  }
+  const saltBytes = coerceSalt(salt, 'salt');
+  const passwordBytes = utf8Encode(password);
+  try {
+    return argon2id(passwordBytes, saltBytes, {
+      t: timeCost,
+      m: memoryCost,
+      p: parallelism,
+      dkLen: ARGON2_OUTPUT_LENGTH,
+    });
+  } catch (e) {
+    throw new CryptoError(
+      ERR_KDF_FAILED,
+      `Argon2id derivation failed: ${(e as Error).message ?? 'unknown'}`,
+    );
+  } finally {
+    for (let i = 0; i < passwordBytes.length; i++) passwordBytes[i] = 0;
+  }
+}
+
 export async function deriveKeys(params: DeriveKeysParams): Promise<DerivedKeys> {
   const {
     password,

@@ -8,3 +8,4 @@ export * from './types/audit';
 export * from './schemas/vault-item.zod';
 export * from './schemas/user.zod';
 export * from './schemas/share.zod';
+export * from './schemas/export.zod';
