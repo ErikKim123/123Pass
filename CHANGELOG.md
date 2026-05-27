@@ -4,6 +4,26 @@
 
 ## [Unreleased]
 
+### BUNDLE-01 마무리 — Tree-shaking 활성화 (2026-05-27)
+- **`"sideEffects": false`**를 4개 내부 패키지(`@123pass/core-crypto`, `@123pass/shared`, `@123pass/vault-sdk`, `@123pass/ui`) `package.json`에 추가.
+- 근본 원인: 누락된 sideEffects 플래그로 webpack/Next.js가 barrel re-export(`export * from`)를 통한 모든 모듈을 강제 포함시켰음. 이제 사용되지 않은 export(예: BIP39 wordlist, HIBP SHA-1, TOTP, recovery)가 페이지별로 정확히 tree-shaken됨.
+
+**Next.js First Load JS 변화** (모든 페이지 < 200 KB 달성):
+
+| Page | Before | After | Reduction |
+|------|-------:|------:|----------:|
+| /vault | 211 KB | **103 KB** | **−108 KB (−51%)** |
+| /vault/audit | 210 KB | 90.4 KB | −120 KB |
+| /settings | 211 KB | 104 KB | −107 KB |
+| /groups | 210 KB | 115 KB | −95 KB |
+| /groups/[id] | 211 KB | 129 KB | −82 KB |
+| /shares | 210 KB | 128 KB | −82 KB |
+| /login | 220 KB | 173 KB | −47 KB |
+| /signup | 221 KB | 190 KB | −31 KB |
+
+- BUNDLE-01 목표(200 KB) 대비 /vault는 49% 여유.
+- 영지식 가드/검증 0건 회귀: typecheck 12/12, lint 8/8, tests 139/139.
+
 ### FR-15 — 플랫폼 UI 확장 (2026-05-27)
 - **`apps/extension`** (Chrome MV3): Popup에 Settings 토글 추가. 영구 새 패널에서 Export(Blob 다운로드) + Import(파일 input + 암호화 export password 입력) 흐름 제공. 빌드 후 203 modules (이전 187 → +16).
 - **`apps/desktop`** (Tauri 2): App 헤더에 Settings 토글 추가. WebView 표준 Blob/URL.createObjectURL로 파일 다운로드, `<input type="file">`로 import. 신규 Tauri 플러그인 의존성 추가 없음.
