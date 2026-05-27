@@ -16,6 +16,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_action_logs: {
+        Row: {
+          id: string;
+          admin_id: string;
+          action_type: string;
+          target_kind: string | null;
+          target_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          action_type: string;
+          target_kind?: string | null;
+          target_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          action_type?: string;
+          target_kind?: string | null;
+          target_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      admin_users: {
+        Row: {
+          id: string;
+          email: string;
+          role: string;
+          created_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id: string;
+          email: string;
+          role: string;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          role?: string;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Relationships: [];
+      };
       audit_events: {
         Row: {
           id: string;
@@ -202,6 +256,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      organization_members: {
+        Row: {
+          org_id: string;
+          user_id: string;
+          role: string;
+          joined_at: string;
+        };
+        Insert: {
+          org_id: string;
+          user_id: string;
+          role: string;
+          joined_at?: string;
+        };
+        Update: {
+          org_id?: string;
+          user_id?: string;
+          role?: string;
+          joined_at?: string;
+        };
+        Relationships: [];
+      };
+      organizations: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          owner_id: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          owner_id: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          owner_id?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       shared_items: {
         Row: {
           id: string;
@@ -277,6 +379,39 @@ export type Database = {
       };
     };
     Functions: {
+      admin_get_user_stats: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
+      admin_list_audit_events: {
+        Args: {
+          search_user_id: unknown;
+          event_filter: unknown;
+          limit_count: number;
+          offset_count: number;
+        };
+        Returns: unknown;
+      };
+      admin_list_organizations: {
+        Args: {
+          search_query: unknown;
+          limit_count: number;
+          offset_count: number;
+        };
+        Returns: unknown;
+      };
+      admin_list_users: {
+        Args: {
+          search_query: unknown;
+          limit_count: number;
+          offset_count: number;
+        };
+        Returns: unknown;
+      };
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
       rotate_master_password: {
         Args: {
           new_kdf_params: Json;

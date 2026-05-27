@@ -4,6 +4,30 @@
 
 ## [Unreleased]
 
+### Operator (Admin) System — Phase 1 (2026-05-27)
+**엄격 영지식 경계를 유지하는 별도 운영자 시스템 신규 추가**. 운영자도 vault ciphertext에 절대 접근 불가.
+
+- **신규 마이그레이션 `supabase/migrations/0009_admin.sql`**:
+  - 테이블: `admin_users` (id, email, role: super_admin/support/read_only), `admin_action_logs` (감사용 append-only), `organizations` (B2B 멀티테넌시), `organization_members` — 모두 RLS 활성
+  - 보안 정의자(SECURITY DEFINER) RPC 4개: `admin_get_user_stats()`, `admin_list_users()`, `admin_list_audit_events()`, `admin_list_organizations()`. 모두 `is_admin()` 가드로 권한 차단, 호출자 외에는 vault 데이터 노출 금지.
+  - 영지식 hard guard: `comment on` 절로 vault/users 테이블에 "운영자는 이 테이블 직접 SELECT 불가" 명시. 운영자가 컬럼 grant를 얻지 못해 RLS 정책 이전에 권한 단계에서 차단됨.
+- **신규 앱 `apps/admin` (Next.js, port 3100)**:
+  - `package.json` / `tsconfig.json` / `next.config.mjs` / `.eslintrc.cjs` 셋업
+  - `@123pass/vault-sdk`만 의존 (`@123pass/ui` 불필요 — 별도 디자인)
+  - `src/lib/admin-client.ts`: Typed wrappers (fetchUserStats / fetchUsers / fetchAuditEvents / fetchOrganizations / checkIsAdmin). 파일 전체에 `from('encrypted_vault_items')` / `from('users')` (raw) 참조 0건 — 모든 read는 admin_* RPC 경유
+  - `src/lib/mock-data.ts`: env-less 개발용 합성 데이터
+- **4개 대시보드 페이지** (모두 mock + live 양쪽 지원):
+  - `/metrics` — 5개 집계 카드 (total_users, users_with_vault, total_vault_items, total_groups, total_shares)
+  - `/users` — 이메일/생성일/아이템 수/마지막 audit (kdf_params/encrypted_private_key 미노출)
+  - `/audit` — event_type/user_id 필터 + 페이지네이션. ip_hash는 SHA-256 truncated
+  - `/orgs` — 조직 목록 + status badge + 멤버 수
+  - 사이드바에 "Zero-knowledge boundary" 안내 박스 상시 표시
+- **`/login`** 페이지: Supabase Auth signIn → `is_admin()` 체크 → 통과 시만 대시보드 진입. mock 모드는 우회.
+- **gen-types 스크립트 개선**: 인자 없는 함수의 `Args: {}` → `Args: Record<string, never>` (ESLint ban-types 규칙 준수).
+- 마이그레이션 9개 / 테이블 12개 / RLS 12개 / 정책 27개 / 인덱스 27개 / 함수 9개.
+- typecheck 13/13 ✅, lint 9/9 ✅, tests 149/149 ✅, admin build 9 pages (5 dashboard + login + root + 404) ✅.
+- 영지식 검증: `grep -r "from('encrypted_vault_items'\|from('users'" apps/admin/src` → 0 hits.
+
 ### DB5 — CI 마이그레이션 자동 적용 + 타입 drift gate (2026-05-27)
 - **`.github/workflows/ci.yml` 갱신**: 모든 push/PR마다 두 가지 신규 검증 단계 추가.
   - `pnpm db:verify` — PGlite로 8개 마이그레이션 적용 + 9개 RLS behaviour assertion 실행 (Docker 불필요)

@@ -227,11 +227,15 @@ async function main() {
         return { name, ts: pgArgToTs(typ) };
       });
     lines.push(`      ${fn.name}: {`);
-    lines.push('        Args: {');
-    for (const a of argEntries) {
-      lines.push(`          ${a.name}: ${a.ts};`);
+    if (argEntries.length === 0) {
+      lines.push('        Args: Record<string, never>;');
+    } else {
+      lines.push('        Args: {');
+      for (const a of argEntries) {
+        lines.push(`          ${a.name}: ${a.ts};`);
+      }
+      lines.push('        };');
     }
-    lines.push('        };');
     lines.push(`        Returns: ${pgArgToTs(fn.return_type)};`);
     lines.push('      };');
   }

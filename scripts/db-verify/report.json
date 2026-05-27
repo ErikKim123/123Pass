@@ -1,11 +1,11 @@
 {
   "toolingVersion": "pglite",
-  "startedAt": "2026-05-27T02:28:09.404Z",
+  "startedAt": "2026-05-27T06:32:02.628Z",
   "migrations": [
     {
       "file": "0001_extensions.sql",
       "status": "ok",
-      "durationMs": 2,
+      "durationMs": 0,
       "skipped": [
         "create extension if not exists \"pgcrypto\";",
         "create extension if not exists \"uuid-ossp\";"
@@ -14,27 +14,27 @@
     {
       "file": "0002_users.sql",
       "status": "ok",
-      "durationMs": 13
+      "durationMs": 7
     },
     {
       "file": "0003_vault.sql",
       "status": "ok",
-      "durationMs": 18
+      "durationMs": 12
     },
     {
       "file": "0004_sharing.sql",
       "status": "ok",
-      "durationMs": 10
+      "durationMs": 7
     },
     {
       "file": "0005_groups.sql",
       "status": "ok",
-      "durationMs": 18
+      "durationMs": 12
     },
     {
       "file": "0006_audit.sql",
       "status": "ok",
-      "durationMs": 4
+      "durationMs": 6
     },
     {
       "file": "0007_realtime.sql",
@@ -44,17 +44,26 @@
     {
       "file": "0008_rpc_rotate.sql",
       "status": "ok",
-      "durationMs": 3
+      "durationMs": 2
+    },
+    {
+      "file": "0009_admin.sql",
+      "status": "ok",
+      "durationMs": 20
     }
   ],
   "schema": {
     "tables": [
+      "admin_action_logs",
+      "admin_users",
       "audit_events",
       "encrypted_vault_items",
       "folders",
       "group_items",
       "group_members",
       "groups",
+      "organization_members",
+      "organizations",
       "shared_items",
       "users"
     ],
@@ -62,16 +71,40 @@
       "user_directory"
     ],
     "rlsEnabledTables": [
+      "admin_action_logs",
+      "admin_users",
       "audit_events",
       "encrypted_vault_items",
       "folders",
       "group_items",
       "group_members",
       "groups",
+      "organization_members",
+      "organizations",
       "shared_items",
       "users"
     ],
     "policies": [
+      {
+        "relation": "public.admin_action_logs",
+        "policy": "admin_action_logs_admin_insert",
+        "command": "INSERT"
+      },
+      {
+        "relation": "public.admin_action_logs",
+        "policy": "admin_action_logs_admin_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.admin_users",
+        "policy": "admin_users_self_visible",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.admin_users",
+        "policy": "admin_users_super_admin_writes",
+        "command": "ALL"
+      },
       {
         "relation": "public.audit_events",
         "policy": "audit_self_insert",
@@ -133,6 +166,26 @@
         "command": "UPDATE"
       },
       {
+        "relation": "public.organization_members",
+        "policy": "organization_members_admin_all",
+        "command": "ALL"
+      },
+      {
+        "relation": "public.organization_members",
+        "policy": "organization_members_self_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.organizations",
+        "policy": "organizations_admin_all",
+        "command": "ALL"
+      },
+      {
+        "relation": "public.organizations",
+        "policy": "organizations_member_read",
+        "command": "SELECT"
+      },
+      {
         "relation": "public.shared_items",
         "policy": "shared_items_participant_read",
         "command": "SELECT"
@@ -169,6 +222,18 @@
       }
     ],
     "indexes": [
+      {
+        "relation": "public.admin_action_logs",
+        "index": "admin_action_logs_admin_time_idx"
+      },
+      {
+        "relation": "public.admin_action_logs",
+        "index": "admin_action_logs_pkey"
+      },
+      {
+        "relation": "public.admin_users",
+        "index": "admin_users_pkey"
+      },
       {
         "relation": "public.audit_events",
         "index": "audit_events_pkey"
@@ -226,6 +291,22 @@
         "index": "groups_pkey"
       },
       {
+        "relation": "public.organization_members",
+        "index": "organization_members_pkey"
+      },
+      {
+        "relation": "public.organization_members",
+        "index": "organization_members_user_idx"
+      },
+      {
+        "relation": "public.organizations",
+        "index": "organizations_pkey"
+      },
+      {
+        "relation": "public.organizations",
+        "index": "organizations_slug_key"
+      },
+      {
         "relation": "public.shared_items",
         "index": "shared_items_from_user_idx"
       },
@@ -251,6 +332,26 @@
       }
     ],
     "functions": [
+      {
+        "name": "admin_get_user_stats",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_list_audit_events",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_list_organizations",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_list_users",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "is_admin",
+        "lang": "sql"
+      },
       {
         "name": "is_group_admin",
         "lang": "sql"
@@ -313,5 +414,5 @@
     }
   ],
   "errors": [],
-  "finishedAt": "2026-05-27T02:28:12.903Z"
+  "finishedAt": "2026-05-27T06:32:05.150Z"
 }
