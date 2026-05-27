@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### FR-15 — 플랫폼 UI 확장 (2026-05-27)
+- **`apps/extension`** (Chrome MV3): Popup에 Settings 토글 추가. 영구 새 패널에서 Export(Blob 다운로드) + Import(파일 input + 암호화 export password 입력) 흐름 제공. 빌드 후 203 modules (이전 187 → +16).
+- **`apps/desktop`** (Tauri 2): App 헤더에 Settings 토글 추가. WebView 표준 Blob/URL.createObjectURL로 파일 다운로드, `<input type="file">`로 import. 신규 Tauri 플러그인 의존성 추가 없음.
+- **`apps/mobile`** (Expo + React Native): Settings 화면에 Export/Import 섹션 추가. `expo-document-picker` 없이 `expo-clipboard` 기반 — Export는 암호화 JSON을 클립보드로 복사, Import는 multiline TextInput에 paste 또는 클립보드 자동 읽기. 새 의존성 0.
+- 4개 플랫폼 모두 동일한 `EXPORT_FORMAT_ID` 상수와 `formatImportSummary` 패턴 사용 → 일관된 UX.
+- typecheck 12/12, lint 8/8, tests 139/139, extension vite build 통과, 0 regression.
+
 ### FR-15 백로그 갭 해결 (2026-05-27)
 - **갭 #3 (KAT 벡터)**: `export-import.test.ts`에 frozen v1 export blob KAT 추가. 향후 `deriveSingleKey` / AAD 구성 / AES-GCM 모드 변경 시 backward-compat 회귀를 즉시 catch.
 - **갭 #5 (version 거부)**: zod `literal(1)`이 `version: 2` 및 알 수 없는 `format` 값을 schema boundary에서 명시적으로 거부함을 검증하는 테스트 2개 추가.
