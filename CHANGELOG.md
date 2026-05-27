@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+### Operator (Admin) System — Phase 2 (2026-05-27)
+**Phase 1의 read-only 대시보드 위에 mutation RPC + UI 추가**. 모든 mutation은 `admin_action_logs`에 자동 기록되어 감사 가능.
+
+- **신규 마이그레이션 `0010_admin_actions.sql`** — 12개 RPC 추가:
+  - 부트스트랩: `admin_bootstrap_first_super_admin()` — `admin_users`가 비었을 때만 동작 (자가 차단). anon/authenticated에 grant되어 최초 설치 시 호출 가능
+  - 권한 검사: `is_super_admin()` 헬퍼
+  - admin_users 관리: `admin_list_admins()`, `admin_invite_admin()`, `admin_update_admin_role()`, `admin_remove_admin()` — 모두 super_admin 가드 + 마지막 super_admin 보호
+  - 조직 CRUD: `admin_create_org()` (owner를 organization_members에 자동 시드), `admin_update_org_status()`
+  - 사용자 라이프사이클: `admin_suspend_user(reason)`, `admin_restore_user()`, `admin_schedule_user_deletion()` (GDPR 30일 grace period)
+  - 모든 mutation은 `log_admin_action()` 내부 헬퍼 호출로 audit 기록
+- **`users` 테이블 확장**: `status` (active/suspended/pending_deletion), `suspended_at`, `deletion_scheduled_for` 컬럼 추가. `admin_list_users` 반환 컬럼도 확장.
+- **영지식 보존 확인**: 모든 신규 RPC는 ciphertext 직접 접근 0건. 사용자 정지/삭제는 status flag만 변경하며 실제 데이터 purge는 별도 배치 작업으로 분리 (이번 PR 범위 외).
+- **신규 페이지 `/admins`**: 운영자 명단 + 초대 폼 (User UUID + email + role 선택) + role 변경 dropdown + Remove 버튼. super_admin이 아니면 mutation UI 숨김.
+- **`/orgs` 페이지 확장**: "+ Create org" 버튼 → 인라인 폼 (name/slug regex 검증/owner UUID) + 각 row에 status dropdown으로 active/suspended/deleted 즉시 변경.
+- **`/users` 페이지 확장**: status 컬럼 + Suspend(이유 prompt)/Restore/Delete 버튼. Delete는 30일 grace 안내 confirm.
+- **PGlite stub**: `anon` 역할 추가 (Supabase 호환).
+- **마이그레이션**: 10개 / 테이블 12개 / RLS 12개 / 정책 27개 / 인덱스 27개 / **함수 21개 (Phase 1의 9개 → 21개)**.
+- typecheck 13/13, lint 9/9, tests 149/149, admin build **10 static pages**, 0 regression.
+
 ### Operator (Admin) System — Phase 1 (2026-05-27)
 **엄격 영지식 경계를 유지하는 별도 운영자 시스템 신규 추가**. 운영자도 vault ciphertext에 절대 접근 불가.
 

@@ -79,6 +79,7 @@ async function main() {
     $$;
     do $$ begin create role authenticated; exception when duplicate_object then null; end $$;
     do $$ begin create role service_role; exception when duplicate_object then null; end $$;
+    do $$ begin create role anon; exception when duplicate_object then null; end $$;
     do $$ begin create publication supabase_realtime; exception when duplicate_object then null; end $$;
     grant usage on schema public to authenticated, service_role;
   `);

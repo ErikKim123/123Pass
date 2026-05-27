@@ -80,6 +80,10 @@ async function main() {
       create role service_role;
     exception when duplicate_object then null;
     end $$;
+    do $$ begin
+      create role anon;
+    exception when duplicate_object then null;
+    end $$;
 
     -- supabase_realtime is a logical publication the platform creates at provisioning time.
     do $$ begin

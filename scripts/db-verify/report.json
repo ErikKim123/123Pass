@@ -1,11 +1,11 @@
 {
   "toolingVersion": "pglite",
-  "startedAt": "2026-05-27T06:32:02.628Z",
+  "startedAt": "2026-05-27T09:26:08.746Z",
   "migrations": [
     {
       "file": "0001_extensions.sql",
       "status": "ok",
-      "durationMs": 0,
+      "durationMs": 1,
       "skipped": [
         "create extension if not exists \"pgcrypto\";",
         "create extension if not exists \"uuid-ossp\";"
@@ -19,12 +19,12 @@
     {
       "file": "0003_vault.sql",
       "status": "ok",
-      "durationMs": 12
+      "durationMs": 13
     },
     {
       "file": "0004_sharing.sql",
       "status": "ok",
-      "durationMs": 7
+      "durationMs": 6
     },
     {
       "file": "0005_groups.sql",
@@ -34,7 +34,7 @@
     {
       "file": "0006_audit.sql",
       "status": "ok",
-      "durationMs": 6
+      "durationMs": 3
     },
     {
       "file": "0007_realtime.sql",
@@ -49,7 +49,12 @@
     {
       "file": "0009_admin.sql",
       "status": "ok",
-      "durationMs": 20
+      "durationMs": 16
+    },
+    {
+      "file": "0010_admin_actions.sql",
+      "status": "ok",
+      "durationMs": 9
     }
   ],
   "schema": {
@@ -333,7 +338,23 @@
     ],
     "functions": [
       {
+        "name": "admin_bootstrap_first_super_admin",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_create_org",
+        "lang": "plpgsql"
+      },
+      {
         "name": "admin_get_user_stats",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_invite_admin",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_list_admins",
         "lang": "plpgsql"
       },
       {
@@ -349,6 +370,30 @@
         "lang": "plpgsql"
       },
       {
+        "name": "admin_remove_admin",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_restore_user",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_schedule_user_deletion",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_suspend_user",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_update_admin_role",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "admin_update_org_status",
+        "lang": "plpgsql"
+      },
+      {
         "name": "is_admin",
         "lang": "sql"
       },
@@ -358,6 +403,14 @@
       },
       {
         "name": "is_group_member",
+        "lang": "sql"
+      },
+      {
+        "name": "is_super_admin",
+        "lang": "sql"
+      },
+      {
+        "name": "log_admin_action",
         "lang": "sql"
       },
       {
@@ -414,5 +467,5 @@
     }
   ],
   "errors": [],
-  "finishedAt": "2026-05-27T06:32:05.150Z"
+  "finishedAt": "2026-05-27T09:26:10.841Z"
 }

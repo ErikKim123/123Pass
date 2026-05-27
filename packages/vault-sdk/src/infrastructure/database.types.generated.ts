@@ -346,6 +346,9 @@ export type Database = {
           encrypted_private_key: Json;
           recovery_enabled: boolean;
           created_at: string;
+          status: string;
+          suspended_at: string | null;
+          deletion_scheduled_for: string | null;
         };
         Insert: {
           id: string;
@@ -355,6 +358,9 @@ export type Database = {
           encrypted_private_key: Json;
           recovery_enabled?: boolean;
           created_at?: string;
+          status?: string;
+          suspended_at?: string | null;
+          deletion_scheduled_for?: string | null;
         };
         Update: {
           id?: string;
@@ -364,6 +370,9 @@ export type Database = {
           encrypted_private_key?: Json;
           recovery_enabled?: boolean;
           created_at?: string;
+          status?: string;
+          suspended_at?: string | null;
+          deletion_scheduled_for?: string | null;
         };
         Relationships: [];
       };
@@ -379,7 +388,34 @@ export type Database = {
       };
     };
     Functions: {
+      admin_bootstrap_first_super_admin: {
+        Args: {
+          bootstrap_user_id: string;
+          bootstrap_email: string;
+        };
+        Returns: void;
+      };
+      admin_create_org: {
+        Args: {
+          org_name: string;
+          org_slug: string;
+          owner_id: string;
+        };
+        Returns: string;
+      };
       admin_get_user_stats: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
+      admin_invite_admin: {
+        Args: {
+          target_user_id: string;
+          target_email: string;
+          target_role: string;
+        };
+        Returns: void;
+      };
+      admin_list_admins: {
         Args: Record<string, never>;
         Returns: unknown;
       };
@@ -408,9 +444,62 @@ export type Database = {
         };
         Returns: unknown;
       };
+      admin_remove_admin: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: void;
+      };
+      admin_restore_user: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: void;
+      };
+      admin_schedule_user_deletion: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: void;
+      };
+      admin_suspend_user: {
+        Args: {
+          target_user_id: string;
+          reason: unknown;
+        };
+        Returns: void;
+      };
+      admin_update_admin_role: {
+        Args: {
+          target_user_id: string;
+          new_role: string;
+        };
+        Returns: void;
+      };
+      admin_update_org_status: {
+        Args: {
+          org_id: string;
+          new_status: string;
+        };
+        Returns: void;
+      };
       is_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      is_super_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      log_admin_action: {
+        Args: {
+          p_admin_id: string;
+          p_action_type: string;
+          p_target_kind: unknown;
+          p_target_id: unknown;
+          p_metadata: unknown;
+        };
+        Returns: void;
       };
       rotate_master_password: {
         Args: {

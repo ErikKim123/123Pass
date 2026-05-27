@@ -5,6 +5,7 @@
 import type {
   AdminAuditEventRow,
   AdminOrganizationRow,
+  AdminRow,
   AdminUserRow,
   UserStats,
 } from './admin-client';
@@ -25,6 +26,9 @@ export const MOCK_USERS: AdminUserRow[] = [
     item_count: 142,
     last_audit_at: '2026-05-26T19:04:00Z',
     recovery_enabled: true,
+    status: 'active',
+    suspended_at: null,
+    deletion_scheduled_for: null,
   },
   {
     id: '00000000-0000-0000-0000-000000000002',
@@ -33,6 +37,9 @@ export const MOCK_USERS: AdminUserRow[] = [
     item_count: 87,
     last_audit_at: '2026-05-27T03:11:00Z',
     recovery_enabled: true,
+    status: 'active',
+    suspended_at: null,
+    deletion_scheduled_for: null,
   },
   {
     id: '00000000-0000-0000-0000-000000000003',
@@ -41,6 +48,9 @@ export const MOCK_USERS: AdminUserRow[] = [
     item_count: 23,
     last_audit_at: '2026-05-25T09:18:00Z',
     recovery_enabled: false,
+    status: 'suspended',
+    suspended_at: '2026-05-22T11:00:00Z',
+    deletion_scheduled_for: null,
   },
   {
     id: '00000000-0000-0000-0000-000000000004',
@@ -49,6 +59,9 @@ export const MOCK_USERS: AdminUserRow[] = [
     item_count: 5,
     last_audit_at: null,
     recovery_enabled: true,
+    status: 'active',
+    suspended_at: null,
+    deletion_scheduled_for: null,
   },
 ];
 
@@ -79,6 +92,30 @@ export const MOCK_AUDIT: AdminAuditEventRow[] = [
     user_agent: 'Mozilla/5.0 (iPhone) Safari/17',
     metadata: { method: 'biometric' },
     created_at: '2026-05-25T09:18:00Z',
+  },
+];
+
+export const MOCK_ADMINS: AdminRow[] = [
+  {
+    id: 'c0000000-0000-0000-0000-000000000001',
+    email: 'root@123pass.example',
+    role: 'super_admin',
+    created_at: '2026-03-01T00:00:00Z',
+    created_by: null,
+  },
+  {
+    id: 'c0000000-0000-0000-0000-000000000002',
+    email: 'support@123pass.example',
+    role: 'support',
+    created_at: '2026-03-15T00:00:00Z',
+    created_by: 'c0000000-0000-0000-0000-000000000001',
+  },
+  {
+    id: 'c0000000-0000-0000-0000-000000000003',
+    email: 'analyst@123pass.example',
+    role: 'read_only',
+    created_at: '2026-04-08T00:00:00Z',
+    created_by: 'c0000000-0000-0000-0000-000000000001',
   },
 ];
 

@@ -10,6 +10,7 @@ const NAV = [
   { href: '/users', label: 'Users' },
   { href: '/audit', label: 'Audit log' },
   { href: '/orgs', label: 'Organizations' },
+  { href: '/admins', label: 'Admins' },
 ];
 
 export default function DashboardLayout({
