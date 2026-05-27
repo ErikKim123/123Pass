@@ -1,0 +1,317 @@
+{
+  "toolingVersion": "pglite",
+  "startedAt": "2026-05-27T02:28:09.404Z",
+  "migrations": [
+    {
+      "file": "0001_extensions.sql",
+      "status": "ok",
+      "durationMs": 2,
+      "skipped": [
+        "create extension if not exists \"pgcrypto\";",
+        "create extension if not exists \"uuid-ossp\";"
+      ]
+    },
+    {
+      "file": "0002_users.sql",
+      "status": "ok",
+      "durationMs": 13
+    },
+    {
+      "file": "0003_vault.sql",
+      "status": "ok",
+      "durationMs": 18
+    },
+    {
+      "file": "0004_sharing.sql",
+      "status": "ok",
+      "durationMs": 10
+    },
+    {
+      "file": "0005_groups.sql",
+      "status": "ok",
+      "durationMs": 18
+    },
+    {
+      "file": "0006_audit.sql",
+      "status": "ok",
+      "durationMs": 4
+    },
+    {
+      "file": "0007_realtime.sql",
+      "status": "ok",
+      "durationMs": 3
+    },
+    {
+      "file": "0008_rpc_rotate.sql",
+      "status": "ok",
+      "durationMs": 3
+    }
+  ],
+  "schema": {
+    "tables": [
+      "audit_events",
+      "encrypted_vault_items",
+      "folders",
+      "group_items",
+      "group_members",
+      "groups",
+      "shared_items",
+      "users"
+    ],
+    "views": [
+      "user_directory"
+    ],
+    "rlsEnabledTables": [
+      "audit_events",
+      "encrypted_vault_items",
+      "folders",
+      "group_items",
+      "group_members",
+      "groups",
+      "shared_items",
+      "users"
+    ],
+    "policies": [
+      {
+        "relation": "public.audit_events",
+        "policy": "audit_self_insert",
+        "command": "INSERT"
+      },
+      {
+        "relation": "public.audit_events",
+        "policy": "audit_self_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.encrypted_vault_items",
+        "policy": "vault_owner_all",
+        "command": "ALL"
+      },
+      {
+        "relation": "public.folders",
+        "policy": "folders_owner_all",
+        "command": "ALL"
+      },
+      {
+        "relation": "public.group_items",
+        "policy": "group_items_member_all",
+        "command": "ALL"
+      },
+      {
+        "relation": "public.group_members",
+        "policy": "group_members_admin_delete",
+        "command": "DELETE"
+      },
+      {
+        "relation": "public.group_members",
+        "policy": "group_members_admin_insert",
+        "command": "INSERT"
+      },
+      {
+        "relation": "public.group_members",
+        "policy": "group_members_self_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.groups",
+        "policy": "groups_member_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.groups",
+        "policy": "groups_owner_delete",
+        "command": "DELETE"
+      },
+      {
+        "relation": "public.groups",
+        "policy": "groups_owner_insert",
+        "command": "INSERT"
+      },
+      {
+        "relation": "public.groups",
+        "policy": "groups_owner_update",
+        "command": "UPDATE"
+      },
+      {
+        "relation": "public.shared_items",
+        "policy": "shared_items_participant_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.shared_items",
+        "policy": "shared_items_recipient_accept",
+        "command": "UPDATE"
+      },
+      {
+        "relation": "public.shared_items",
+        "policy": "shared_items_sender_delete",
+        "command": "DELETE"
+      },
+      {
+        "relation": "public.shared_items",
+        "policy": "shared_items_sender_insert",
+        "command": "INSERT"
+      },
+      {
+        "relation": "public.users",
+        "policy": "users_self_insert",
+        "command": "INSERT"
+      },
+      {
+        "relation": "public.users",
+        "policy": "users_self_read",
+        "command": "SELECT"
+      },
+      {
+        "relation": "public.users",
+        "policy": "users_self_update",
+        "command": "UPDATE"
+      }
+    ],
+    "indexes": [
+      {
+        "relation": "public.audit_events",
+        "index": "audit_events_pkey"
+      },
+      {
+        "relation": "public.audit_events",
+        "index": "audit_user_time_idx"
+      },
+      {
+        "relation": "public.encrypted_vault_items",
+        "index": "encrypted_vault_items_pkey"
+      },
+      {
+        "relation": "public.encrypted_vault_items",
+        "index": "vault_user_favorite_idx"
+      },
+      {
+        "relation": "public.encrypted_vault_items",
+        "index": "vault_user_search_idx"
+      },
+      {
+        "relation": "public.encrypted_vault_items",
+        "index": "vault_user_updated_idx"
+      },
+      {
+        "relation": "public.folders",
+        "index": "folders_pkey"
+      },
+      {
+        "relation": "public.folders",
+        "index": "folders_user_idx"
+      },
+      {
+        "relation": "public.group_items",
+        "index": "group_items_group_updated_idx"
+      },
+      {
+        "relation": "public.group_items",
+        "index": "group_items_pkey"
+      },
+      {
+        "relation": "public.group_members",
+        "index": "group_members_pkey"
+      },
+      {
+        "relation": "public.group_members",
+        "index": "group_members_user_idx"
+      },
+      {
+        "relation": "public.groups",
+        "index": "groups_owner_idx"
+      },
+      {
+        "relation": "public.groups",
+        "index": "groups_pkey"
+      },
+      {
+        "relation": "public.shared_items",
+        "index": "shared_items_from_user_idx"
+      },
+      {
+        "relation": "public.shared_items",
+        "index": "shared_items_item_id_to_user_id_key"
+      },
+      {
+        "relation": "public.shared_items",
+        "index": "shared_items_pkey"
+      },
+      {
+        "relation": "public.shared_items",
+        "index": "shared_items_to_user_idx"
+      },
+      {
+        "relation": "public.users",
+        "index": "users_email_key"
+      },
+      {
+        "relation": "public.users",
+        "index": "users_pkey"
+      }
+    ],
+    "functions": [
+      {
+        "name": "is_group_admin",
+        "lang": "sql"
+      },
+      {
+        "name": "is_group_member",
+        "lang": "sql"
+      },
+      {
+        "name": "rotate_master_password",
+        "lang": "plpgsql"
+      },
+      {
+        "name": "touch_updated_at",
+        "lang": "plpgsql"
+      }
+    ],
+    "realtimeTables": [
+      "public.encrypted_vault_items",
+      "public.group_items",
+      "public.shared_items"
+    ]
+  },
+  "rlsBehaviour": [
+    {
+      "name": "alice sees only her own users row",
+      "status": "pass"
+    },
+    {
+      "name": "bob sees only his own users row",
+      "status": "pass"
+    },
+    {
+      "name": "anonymous (no auth.uid) sees zero users rows",
+      "status": "pass"
+    },
+    {
+      "name": "alice cannot read bob vault items",
+      "status": "pass"
+    },
+    {
+      "name": "alice sees her own vault items",
+      "status": "pass"
+    },
+    {
+      "name": "alice cannot insert a vault item attributed to bob",
+      "status": "pass"
+    },
+    {
+      "name": "user_directory view exposes only id+email+public_key (no kdf_params)",
+      "status": "pass"
+    },
+    {
+      "name": "rotate_master_password requires auth.uid()",
+      "status": "pass"
+    },
+    {
+      "name": "rotate_master_password rejects malformed kdf_params",
+      "status": "pass"
+    }
+  ],
+  "errors": [],
+  "finishedAt": "2026-05-27T02:28:12.903Z"
+}

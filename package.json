@@ -14,9 +14,11 @@
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "typecheck": "turbo run typecheck",
+    "db:verify": "node scripts/db-verify/verify.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.4.6",
     "@types/node": "^20.11.30",
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.4.0",

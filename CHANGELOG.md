@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+### DB2 — PGlite 기반 마이그레이션 자동 검증 (2026-05-27, RUNTIME-01 부분 해소)
+- 신규 스크립트 `scripts/db-verify/verify.mjs` 추가 (`pnpm db:verify`).
+- Docker/Supabase CLI 없이 8개 마이그레이션(0001~0008)을 실제 PostgreSQL 16 (PGlite WASM)에 적용하여 검증.
+- Supabase 호환 stub 작성: `auth.users`, `auth.uid()`, `authenticated`/`service_role` 롤, `supabase_realtime` publication, 기본 public schema grants.
+- 검증 결과:
+  - **🐛 실제 버그 발견 및 수정**: `0007_realtime.sql`의 `ALTER PUBLICATION ... DROP TABLE IF EXISTS` 구문이 PG 15/16에서 미지원. `DO $$ ... exception when undefined_object` 블록으로 idempotent 패턴 교체.
+  - ✅ 8/8 마이그레이션 적용 성공
+  - ✅ 스키마: 8 테이블, 8 RLS 활성, 19 정책, 20 인덱스, 4 함수(`is_group_admin`, `is_group_member`, `rotate_master_password`, `touch_updated_at`), 1 뷰(`user_directory`), 3 realtime publication 엔트리
+  - ✅ 9/9 RLS behavior assertions 통과:
+    - 사용자 간 `public.users`/`encrypted_vault_items` 행 격리
+    - 익명 세션은 0행 반환
+    - 크로스 사용자 INSERT는 RLS WITH CHECK로 차단
+    - `user_directory` 뷰가 `kdf_params` 등 비공개 컬럼 누출 안 함
+    - `rotate_master_password`가 미인증 시 `AUTH_REQUIRED`, 잘못된 kdf_params 시 `KDF_PARAMS_INVALID` 발생
+- 한계: Supabase Auth JWT 흐름, 실제 Realtime broadcast, Storage policies는 PGlite로 검증 불가 (실제 `supabase start` 필요).
+
 ### FR-15 — E2E Playwright 시나리오 추가 (2026-05-27)
 - 신규 spec `tests/e2e/fr15-export-import.spec.ts` 추가 (6개 시나리오):
   1. **암호화 export 라운드트립** — 사용자 A 가입 → 항목 생성 → export → 사용자 B(별도 context) 가입 → import → 동일 항목 복호화 확인. 다운로드된 파일에 평문 비밀 비포함 검증.
